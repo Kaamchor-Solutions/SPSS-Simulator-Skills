@@ -114,7 +114,24 @@ The helper does not apply user-defined missing codes, filters, weights, or split
 
 Treat output as a calculation result, not as automatic validation of the research design. Check warnings, sample sizes, categories, assumptions, and model suitability before reporting. Refer to [`methods-and-limitations.md`](methods-and-limitations.md) for boundaries.
 
-## 5. Use the LLM instructions
+## 5. Formatted tables, charts and reports
+
+The JSON above is the machine contract. For people, ask for SPSS-style tables:
+
+```bash
+python scripts/analyze.py --config examples/ttest-request.json --format text
+python scripts/analyze.py --config examples/ttest-request.json --format markdown --plots-dir charts/
+```
+
+and for a complete deliverable, list several analyses in one request and build a report:
+
+```bash
+python scripts/spss_report.py --config examples/report-request.json --output report.html
+```
+
+`.html` output is a single self-contained file with embedded charts; `.md` writes the report plus a `<name>_figures/` folder. Add `--no-plots` to skip charts. The report ends with equivalent SPSS syntax (not executed) and the exact request used, so it can be re-run. Real output for every procedure is in [`sample-output.txt`](sample-output.txt).
+
+## 6. Use the LLM instructions
 
 `SKILL.md` is the core LLM instruction file. Upload or paste it into a platform’s custom-instructions/skill facility. Include `references/procedure-guide.md` if the platform cannot read companion reference files. The platform must separately support file upload and computation for end-to-end analysis; otherwise, the assistant should provide syntax/code or interpret output you provide.
 

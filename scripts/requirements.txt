@@ -1,6 +1,7 @@
 pandas>=2.0
 scipy>=1.10
 statsmodels>=0.14
+matplotlib>=3.9
 openpyxl>=3.1
 # Needed only when reading SPSS .sav files:
 pyreadstat>=1.2

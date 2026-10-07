@@ -27,8 +27,8 @@ Do not make the user answer everything before inspecting an uploaded file. First
 5. **Prepare data** — Apply only documented transformations. Preserve raw variables, create explicitly named derived fields, show recode/filter formulas and before/after counts. Never drop cases, impute, recode, weight, or exclude outliers silently. Distinguish system missing from user-defined missing codes; do not assume 0 or 99 means missing.
 6. **Compute** — Use executable statistical libraries or the bundled companion for exact calculations. For every procedure, verify analysis N and the variables actually used. If code cannot run, state that results are not computed and provide runnable code or request output—do not approximate p-values or fabricate tables.
 7. **Validate** — Independently check key quantities (sample counts, degrees of freedom, table totals, model N, bounds, p-value ranges, and a second computation for consequential results). Inspect convergence, warnings, singularity, empty cells, and assumption diagnostics. Report tests as exploratory when assumptions/design warrant.
-8. **Present** — Show concise SPSS-like output tables, then translate them into plain language, including magnitude, direction, uncertainty, and practical meaning. Separate statistical significance from importance. Label two-sided/one-sided tests and multiplicity handling.
-9. **Reproduce and export** — Provide analysis decisions, transformations, missingness policy, software/package versions, executable code and/or SPSS syntax, and a clean report. Offer CSV/XLSX tables only when the environment can create them. Keep original data untouched.
+8. **Present** — Show the SPSS-style tables produced by `scripts/analyze.py --format text|markdown` (never re-type numbers by hand or reformat them from memory), add the charts that fit the procedure, then translate the tables into plain language, including magnitude, direction, uncertainty, and practical meaning. Separate statistical significance from importance. Label two-sided/one-sided tests and multiplicity handling. See "Producing SPSS-like output" below.
+9. **Reproduce and export** — For a deliverable, run `scripts/spss_report.py` to build a Markdown or self-contained HTML report. Provide analysis decisions, transformations, missingness policy, software/package versions, executable code and/or SPSS syntax, and a clean report. Offer CSV/XLSX tables only when the environment can create them. Keep original data untouched.
 
 ## Analysis selection and safeguards
 
@@ -48,6 +48,22 @@ Read `references/procedure-guide.md` for a compact mapping of common questions t
 When runtime supports Python, use `scripts/analyze.py` for deterministic supported procedures. Read `references/procedure-guide.md` and `references/portable-runtime.md` for its interface and limits. The companion is an aid, not a replacement for design judgment. For unsupported procedures, use an appropriate validated package or generate SPSS syntax for the user to run in licensed SPSS, clearly labeling what has and has not been executed.
 
 Offer SPSS-like navigation labels as a familiar guide (for example, Analyze → Descriptive Statistics → Frequencies), but state menu names can vary by version and do not imply that this agent operates the SPSS graphical interface.
+
+## Producing SPSS-like output
+
+The helper has three presentation layers on top of the unchanged JSON contract. Always compute first, then present from the computed result.
+
+1. **Tables.** `python scripts/analyze.py --config request.json --format text` (or `markdown`) prints SPSS-titled tables: Descriptive Statistics, Frequencies with Percent/Valid Percent/Cumulative Percent, Crosstabulation + Chi-Square Tests + Symmetric Measures, Group Statistics + Independent Samples Test, Paired Samples Statistics/Test, Descriptives + ANOVA, Correlations matrix, Model Summary + ANOVA + Coefficients (B, Std. Error, Beta, t, Sig.), Omnibus Test + Model Summary + Classification Table + Variables in the Equation (Exp(B)), Reliability Statistics. Sig. follows the SPSS convention (`.035`, `.000` for p < .0005). The default `--format json` is unchanged; use it when you need to inspect `valid`, `data_audit` or exact values.
+2. **Charts.** Add `--plots-dir DIR` to write PNGs: histogram with normal curve (describe), bar chart (frequencies), clustered bar (crosstab), boxplot + 95% CI error bars (t-test, ANOVA), difference histogram + scatter (paired), scatter with fit line (correlation), scatter + residual plot (regression). Look at the charts you make; mention outliers, skew or non-linearity you can actually see. No chart is produced for an invalid result.
+3. **Report.** `python scripts/spss_report.py --config report-request.json --output report.html` (or `.md`) runs several analyses from one request (see `examples/report-request.json`) and assembles: Executive result, Data and decisions, Results (tables + charts), Interpretation (APA-style sentences), Diagnostics and limitations, Reproducibility (versions, equivalent SPSS syntax, the request). An analysis that fails is listed as "did not run" with its reason instead of being dropped.
+
+Rules when driving these layers:
+
+- Respect `valid: false`. The tables print "RESULT INVALID" and the reason; report that, never a substitute number.
+- Quote the **Note**/footnote lines. They say which SPSS rows are not computed (Levene, pooled-variance t, post hoc, Fisher), so do not claim them.
+- Interpretation sentences are generated from the numbers. Keep their hedging: association not causation, significance is not importance, exploratory when many tests.
+- The tables follow SPSS layout, not SPSS's every digit: percentile method, rounding and defaults can differ. Say "SPSS-style", never "SPSS output".
+- Show the user the report file or the tables; do not paste raw JSON unless asked. Keep the exact commands/request so the analysis can be re-run.
 
 ## Default report format
 

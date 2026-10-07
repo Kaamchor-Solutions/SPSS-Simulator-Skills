@@ -38,6 +38,8 @@ The bundled Python companion (`scripts/analyze.py`) supports:
 - Binary logistic regression
 - Cronbach’s alpha
 
+Presentation layers (wrapping the same computed results): SPSS-style formatted tables (`--format text|markdown`), charts (`--plots-dir`), and a one-command Markdown/HTML report with interpretation, limitations and equivalent SPSS syntax (`scripts/spss_report.py`). See [`docs/sample-output.txt`](docs/sample-output.txt).
+
 Input formats: CSV, TSV, Excel (`.xlsx`/`.xls`, depending on the installed engine), and SPSS `.sav` (with `pyreadstat`). Regression predictors in the helper must be numeric; binary logistic outcomes must be coded 0/1.
 
 ## Quick start: run the Python helper
@@ -90,7 +92,7 @@ The precise import steps differ by platform. This repository does not promise co
 ```text
 .
 ├── SKILL.md                      # LLM skill instructions (upload or paste into an AI platform)
-├── scripts/
+├── scripts/                      # analyze.py, spss_format.py, spss_plots.py, spss_report.py
 │   ├── analyze.py                # Deterministic Python companion (JSON in → JSON out)
 │   └── requirements.txt
 ├── docs/                         # Getting started; methods and limitations
