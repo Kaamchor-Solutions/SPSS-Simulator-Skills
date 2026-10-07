@@ -1,0 +1,6 @@
+{
+    "file": "examples/demo.csv",
+    "action": "crosstab",
+    "row": "group",
+    "column": "event"
+}

@@ -23,7 +23,9 @@ Keep the LLM in an analyst/orchestration role and delegate numeric computation t
 ## Shared behavior
 
 - `.csv`, `.tsv`, `.xlsx`/`.xls` (subject to available pandas engine), and `.sav` (requires `pyreadstat`) are supported.
-- Analyses use listwise-complete cases for requested variables. Crosstabs omit incomplete pairs.
+- Regression and alpha use listwise-complete cases for requested variables; describe and frequencies use per-variable nonmissing values, not listwise deletion. Crosstabs and paired t-tests omit incomplete pairs, and correlation is computed pairwise per variable pair (per-pair N is reported).
+- Inferential procedures (t-tests, ANOVA, correlation, regression, alpha and crosstabs) carry a `data_audit` object (`rows_total`, `rows_used`, `exclusions` with reasons and counts). Treat a non-empty `exclusions` list as a warning and check it before relying on the analysis N.
+- SPSS `.sav` value labels are not applied; labelled variables are read as their underlying codes. User-defined SPSS missing values are not identified.
 - No automatic missing-code replacement, weighting, filtering, case exclusion, outlier deletion, recoding, imputation, or category encoding occurs.
 - The helper reports summaries/results as JSON. It does not send files to an external service.
 - A successful numerical calculation does not establish that the chosen procedure is appropriate.
@@ -41,3 +43,11 @@ This is not an IBM SPSS engine and does not read every SPSS setting. Results may
 ## Data protection
 
 Use de-identified or minimum-necessary data. Keep private datasets and analysis outputs out of the source repository. Do not send data to third-party LLM platforms without authorization and an appropriate privacy review. Follow institutional, contractual, and jurisdictional data-protection requirements.
+
+## Validation and result status
+
+Variable selections must be non-empty lists of distinct column names. Crosstab variables must be different. Numeric infinity values are rejected in requested columns (all columns for inventory), not silently treated as usable cases; explicitly correct or recode them first. No automatic recoding is performed.
+
+Inspect `valid` before interpretation. Undefined inference (constant correlation, zero-variance differences/groups/item totals, insufficient crosstab categories) returns `valid: false`, a reason, and no usable test result. Correlation also marks invalid pairs individually. Logistic fits report convergence and are invalid when nonconvergent or separation warnings occur; numerical exceptions exit nonzero. JSON output does not by itself mean valid inference.
+
+Audit counts are overlapping reason/variable incidences, not a disjoint partition. Do not sum exclusions to derive dropped rows. Use `rows_total - rows_used` for a procedure's unique dropped-row total; correlation instead reports each pair's N and dropped count and sets overall `rows_used` to null. ANOVA dropped-group `count` is the group's original row count; `usable_n` is its numeric, nonmissing outcome count. Describe and frequencies have per-variable missing counts rather than `data_audit`.

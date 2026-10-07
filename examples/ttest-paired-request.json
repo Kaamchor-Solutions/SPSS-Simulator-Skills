@@ -1,0 +1,6 @@
+{
+    "file": "examples/demo-paired.csv",
+    "action": "ttest",
+    "outcome": "after",
+    "paired_with": "before"
+}

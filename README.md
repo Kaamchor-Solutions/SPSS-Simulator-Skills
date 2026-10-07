@@ -68,7 +68,7 @@ Run the analysis:
 python scripts/analyze.py --config request.json --output results.json
 ```
 
-`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. More request examples are in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md).
+`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. Runnable request files for every supported procedure are in [`examples/`](examples/) (`describe-request.json`, `anova-request.json`, and so on); more context is in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md). Inferential procedures report exclusions in `data_audit`; describe and frequencies instead report per-variable missing counts.
 
 Run the unit tests to verify your environment:
 
@@ -129,3 +129,11 @@ If you use this software in research or reporting, please cite it using the meta
 ## License and trademark
 
 This project is released under the [MIT License](LICENSE). “IBM” and “SPSS” are trademarks of their respective owners. This independent project is not affiliated with or endorsed by IBM.
+
+## Validation and result status
+
+Variable selections must be non-empty lists of distinct column names. Crosstab variables must be different. Numeric infinity values are rejected in requested columns (all columns for inventory), not silently treated as usable cases; explicitly correct or recode them first. No automatic recoding is performed.
+
+Inspect `valid` before interpretation. Undefined inference (constant correlation, zero-variance differences/groups/item totals, insufficient crosstab categories) returns `valid: false`, a reason, and no usable test result. Correlation also marks invalid pairs individually. Logistic fits report convergence and are invalid when nonconvergent or separation warnings occur; numerical exceptions exit nonzero. JSON output does not by itself mean valid inference.
+
+Audit counts are overlapping reason/variable incidences, not a disjoint partition. Do not sum exclusions to derive dropped rows. Use `rows_total - rows_used` for a procedure's unique dropped-row total; correlation instead reports each pair's N and dropped count and sets overall `rows_used` to null. ANOVA dropped-group `count` is the group's original row count; `usable_n` is its numeric, nonmissing outcome count. Describe and frequencies have per-variable missing counts rather than `data_audit`.
