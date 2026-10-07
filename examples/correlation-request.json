@@ -1,0 +1,9 @@
+{
+    "file": "examples/demo.csv",
+    "action": "correlation",
+    "variables": [
+        "age",
+        "score"
+    ],
+    "method": "pearson"
+}

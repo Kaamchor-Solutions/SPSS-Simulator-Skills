@@ -4,6 +4,20 @@ This project follows a simple Keep a Changelog-style format. Versions use Semant
 
 ## [Unreleased]
 
+### Fixed
+- ANOVA no longer silently excludes groups with fewer than two usable observations; dropped groups are reported with their usable N.
+- Non-numeric values coerced to missing are no longer silent: every procedure that drops rows, groups, or values reports a `data_audit` object (`rows_total`, `rows_used`, `exclusions` with reasons, counts, and samples).
+- Independent t-test now rejects duplicate group selections (for example `["control","control"]`).
+- `.sav` files are now read with their underlying codes (value labels are not applied), so labelled 0/1 variables stay numeric and binary logistic regression works on them; code and documentation now agree.
+- Documentation no longer claims uniform listwise deletion: correlation is documented as pairwise per variable pair, with per-pair N and dropped counts in the output.
+- The getting-started examples now reference columns that exist in the shipped demo data, and every documented request is a runnable file in `examples/` covered by a test.
+
+### Added
+- `data_audit` exclusion reporting across t-tests, ANOVA, correlation, regression, Cronbach's alpha, and crosstabs.
+- `examples/demo-paired.csv`, `examples/demo-items.csv`, and runnable request files for every supported procedure.
+- Known-answer and edge-case tests for every procedure: descriptives, inventory, frequencies, crosstab/chi-square, Welch and paired t-tests, ANOVA, Pearson/Spearman, OLS, logistic regression, and Cronbach's alpha, plus regression tests for the fixed bugs (silent ANOVA group drops, silent numeric coercion, duplicate groups, labelled `.sav` handling) and a test that runs every shipped example request.
+- `describe` and `inventory` now flag mixed columns where some values parse as numeric and some do not.
+
 ### Changed
 - Flattened the repository layout: all project files now live at the repository root instead of the nested `spss-simulator-opensource/` folder.
 - Upgraded the README with badges, a table of contents, a repository-layout overview, a citation section, and corrected license wording.

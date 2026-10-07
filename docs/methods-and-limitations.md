@@ -23,7 +23,9 @@ Keep the LLM in an analyst/orchestration role and delegate numeric computation t
 ## Shared behavior
 
 - `.csv`, `.tsv`, `.xlsx`/`.xls` (subject to available pandas engine), and `.sav` (requires `pyreadstat`) are supported.
-- Analyses use listwise-complete cases for requested variables. Crosstabs omit incomplete pairs.
+- Analyses use listwise-complete cases for requested variables. Crosstabs and paired t-tests omit incomplete pairs, and correlation is computed pairwise per variable pair (per-pair N is reported).
+- Every result that drops rows, groups, or values carries a `data_audit` object (`rows_total`, `rows_used`, `exclusions` with reasons and counts). Treat a non-empty `exclusions` list as a warning and check it before relying on the analysis N.
+- SPSS `.sav` value labels are not applied; labelled variables are read as their underlying codes. User-defined SPSS missing values are not identified.
 - No automatic missing-code replacement, weighting, filtering, case exclusion, outlier deletion, recoding, imputation, or category encoding occurs.
 - The helper reports summaries/results as JSON. It does not send files to an external service.
 - A successful numerical calculation does not establish that the chosen procedure is appropriate.

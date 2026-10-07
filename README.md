@@ -68,7 +68,7 @@ Run the analysis:
 python scripts/analyze.py --config request.json --output results.json
 ```
 
-`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. More request examples are in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md).
+`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. Runnable request files for every supported procedure are in [`examples/`](examples/) (`describe-request.json`, `anova-request.json`, and so on); more context is in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md). Results that drop rows, groups, or values report the exclusions in a `data_audit` object.
 
 Run the unit tests to verify your environment:
 

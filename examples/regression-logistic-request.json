@@ -1,0 +1,9 @@
+{
+    "file": "examples/demo.csv",
+    "action": "regression",
+    "outcome": "event",
+    "predictors": [
+        "age"
+    ],
+    "model": "logistic"
+}

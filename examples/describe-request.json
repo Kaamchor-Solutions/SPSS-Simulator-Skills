@@ -1,0 +1,8 @@
+{
+    "file": "examples/demo.csv",
+    "action": "describe",
+    "variables": [
+        "score",
+        "age"
+    ]
+}
