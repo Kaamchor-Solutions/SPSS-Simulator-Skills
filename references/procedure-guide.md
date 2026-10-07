@@ -57,3 +57,20 @@ RELIABILITY /VARIABLES=item1 item2 item3 /MODEL=ALPHA.
 ```
 
 SPSS syntax option support and command syntax can vary. If exact SPSS execution matters, have the user run syntax in their own SPSS installation and share the output or warnings for review.
+
+## Formatted output per procedure
+
+| Action | `--format` tables | Charts (`--plots-dir`) |
+|---|---|---|
+| describe | Descriptive Statistics (N, Min, Max, Mean, Std. Error, Std. Deviation, Median, quartiles, Skewness) | histogram with normal curve |
+| frequencies | Statistics; Frequency / Percent / Valid Percent / Cumulative Percent | bar chart |
+| crosstab | Case Processing Summary; Crosstabulation (count, % within row/column); Chi-Square Tests; Symmetric Measures | clustered bar |
+| ttest (independent) | Group Statistics; Independent Samples Test (Welch row); effect size | boxplot; mean with 95% CI |
+| ttest (paired) | Paired Samples Statistics; Paired Samples Test; effect size | difference histogram; scatter |
+| anova | Descriptives; ANOVA (sums of squares, mean squares, F, Sig.) | boxplot; mean with 95% CI |
+| correlation | Correlations matrix with Sig. (2-tailed) and N | scatter with fit line |
+| regression linear | Model Summary; ANOVA; Coefficients with Beta | scatter (one predictor); residual plot |
+| regression logistic | Omnibus Test; Model Summary; Classification Table; Variables in the Equation | none |
+| alpha | Case Processing Summary; Reliability Statistics | none |
+
+`scripts/spss_report.py` combines any of these into one report. Not computed (and so never shown): Levene's test, pooled-variance t row, post hoc tests, Fisher exact, collinearity statistics, Hosmer-Lemeshow.

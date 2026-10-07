@@ -50,6 +50,16 @@ Other examples:
 
 Inventory retains all rows. Describe/frequencies use per-variable nonmissing values and report missing counts. Regression/alpha are listwise, crosstabs/paired t-tests omit incomplete pairs, independent tests/ANOVA use usable outcomes within groups, and correlation is pairwise. Inferential procedures report exclusions in `data_audit`. This helper does not infer user-defined SPSS missing-value codes, honor SPSS weights, filters, split-file settings, or apply value labels (labelled `.sav` variables are read as their underlying codes). The agent must surface this and verify data decisions. For regression, the initial helper accepts numeric predictors only; encode categorical predictors explicitly and document reference categories before use. Logistic outcomes must be coded 0/1. Results are not a substitute for domain review, design-aware inference, or licensed SPSS output.
 
+## Formatted output and reports
+
+```bash
+python scripts/analyze.py --config request.json --format text            # SPSS-style tables (or markdown)
+python scripts/analyze.py --config request.json --format markdown --plots-dir charts/
+python scripts/spss_report.py --config report-request.json --output report.html   # or report.md
+```
+
+`--format json` (the default) is the stable machine contract and is unchanged apart from additive fields (ANOVA `sum_of_squares`, linear `model_summary` and `beta_standardized`, logistic `model_fit` and `classification`). Charts and reports need `matplotlib` (in `requirements.txt`); every other feature works without it. HTML reports are one self-contained file. See [`docs/sample-output.txt`](../docs/sample-output.txt) for real output.
+
 ## Validation and result status
 
 Variable selections must be non-empty lists of distinct column names. Crosstab variables must be different. Numeric infinity values are rejected in requested columns (all columns for inventory), not silently treated as usable cases; explicitly correct or recode them first. No automatic recoding is performed.

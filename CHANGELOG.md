@@ -1,5 +1,15 @@
 # Changelog
 
+## Formatted output layer
+
+- `--format text|markdown` on `scripts/analyze.py` prints SPSS-style tables for every procedure; default JSON output is unchanged.
+- `--plots-dir` writes histogram/bar/box/error-bar/scatter/residual charts (matplotlib).
+- New `scripts/spss_report.py` builds a Markdown or self-contained HTML report (executive result, tables, charts, APA-style interpretation, limitations, SPSS syntax, reproducibility).
+- Additive JSON fields: ANOVA `sum_of_squares`; linear `model_summary` and `beta_standardized`; logistic `model_fit` and `classification`.
+- `analyze.run_request()` factored out of the CLI for reuse.
+- `SKILL.md` gains a "Producing SPSS-like output" section; docs and `docs/sample-output.txt` added.
+- New `tests/test_formatting.py` (known-answer tables, plot data, PNG validity, report structure, JSON contract).
+
 ## Second-audit correctness pass
 
 - Reject repeated item/predictor/correlation selections, empty selections and nonfinite inputs.

@@ -318,6 +318,7 @@ def anova(df, cfg):
     return {"action": "one_way_anova", "outcome": cfg["outcome"], "group": gname, "groups": summaries,
             "n": int(n), "F": float(f), "df_between": int(k-1), "df_within": int(n-k),
             "p": float(p), "eta_squared": float(ss_between/ss_total) if ss_total else None,
+            "sum_of_squares": {"between": float(ss_between), "within": float(ss_total - ss_between), "total": ss_total},
             "note": "Classical one-way ANOVA; equal-variance robustness not assessed by this helper.",
             "data_audit": make_audit(len(df), n, y_excl + [missing_exclusion(df, gname)] + dropped_groups + [
                 {"reason": "row dropped: missing outcome or group",
@@ -400,10 +401,20 @@ def regression(df, cfg):
                                  "CI95": [float(ci.loc[term, 0]), float(ci.loc[term, 1])],
                                  "t": float(fit.tvalues[term]), "p": float(fit.pvalues[term])}
                      for term in fit.params.index}
+            y_sd = float(data[outcome].astype(float).std(ddof=1))
+            for name in predictors:
+                x_sd = float(data[name].astype(float).std(ddof=1))
+                terms[name]["beta_standardized"] = (float(fit.params[name]) * x_sd / y_sd) if y_sd else None
+            ss_res = float(fit.ssr)
+            ss_tot = float(fit.centered_tss)
+            summary = {"R": float(math.sqrt(max(fit.rsquared, 0.0))),
+                       "std_error_of_estimate": float(math.sqrt(fit.mse_resid)),
+                       "sum_of_squares": {"regression": ss_tot - ss_res, "residual": ss_res, "total": ss_tot}}
             return {"action": "linear_regression_OLS", "outcome": outcome, "predictors": predictors,
                     "n": int(fit.nobs), "terms": terms, "R_squared": float(fit.rsquared),
                     "adjusted_R_squared": float(fit.rsquared_adj), "F": float(fit.fvalue),
                     "F_df": [float(fit.df_model), float(fit.df_resid)], "model_p": float(fit.f_pvalue),
+                    "model_summary": summary,
                     "warnings": [str(w.message) for w in caught],
                     "note": "Numeric predictors only. Classical standard errors; residual and collinearity diagnostics are not included.",
                     "data_audit": audit}
@@ -427,7 +438,23 @@ def regression(df, cfg):
                                  "OR_CI95": [float(np.exp(ci.loc[term, 0])), float(np.exp(ci.loc[term, 1]))],
                                  "Wald_p": float(fit.pvalues[term])}
                      for term in fit.params.index}
+            pred = (np.asarray(fit.predict(X)) >= 0.5).astype(int)
+            obs = y.astype(int).to_numpy()
+            classification = {"cutoff": 0.5,
+                              "observed_0_predicted_0": int(((obs == 0) & (pred == 0)).sum()),
+                              "observed_0_predicted_1": int(((obs == 0) & (pred == 1)).sum()),
+                              "observed_1_predicted_0": int(((obs == 1) & (pred == 0)).sum()),
+                              "observed_1_predicted_1": int(((obs == 1) & (pred == 1)).sum()),
+                              "overall_percent_correct": float((obs == pred).mean() * 100)}
+            n_obs = float(fit.nobs)
+            cox_snell = 1 - math.exp(2 * (fit.llnull - fit.llf) / n_obs)
+            max_cs = 1 - math.exp(2 * fit.llnull / n_obs)
+            model_fit = {"neg2_log_likelihood": float(-2 * fit.llf), "neg2_log_likelihood_null": float(-2 * fit.llnull),
+                         "chi_square": float(fit.llr), "df": int(fit.df_model),
+                         "cox_snell_R2": float(cox_snell),
+                         "nagelkerke_R2": float(cox_snell / max_cs) if max_cs else None}
             return {"action": "binary_logistic_regression", "outcome": outcome, "event_value": 1,
+                    "model_fit": model_fit, "classification": classification,
                     "predictors": predictors, "n": int(fit.nobs), "terms": terms, "converged": converged,
                     "pseudo_R_squared_McFadden": float(fit.prsquared), "model_LR_p": float(fit.llr_pvalue),
                     "warnings": [str(w.message) for w in caught],
@@ -467,41 +494,63 @@ def alpha(df, variables):
             "data_audit": make_audit(len(df), len(x), exclusions)}
 
 
+def run_request(cfg, df=None):
+    """Run one analysis request (a dict) and return the cleaned JSON-ready result."""
+    if not isinstance(cfg, dict):
+        raise ValueError("Request must be a JSON object")
+    if not isinstance(cfg.get("action", "inventory"), str):
+        raise ValueError("action must be a string")
+    if df is None:
+        df = load_data(cfg)
+    action = cfg.get("action", "inventory").lower()
+    if action == "inventory": result = inventory(df)
+    elif action == "describe": result = describe(df, cfg.get("variables", list(df.columns)))
+    elif action == "frequencies": result = frequencies(df, cfg.get("variables", []))
+    elif action == "crosstab": result = crosstab(df, cfg.get("row", ""), cfg.get("column", ""))
+    elif action == "ttest": result = ttest(df, cfg)
+    elif action == "anova": result = anova(df, cfg)
+    elif action == "correlation": result = correlation(df, cfg)
+    elif action == "regression": result = regression(df, cfg)
+    elif action == "alpha": result = alpha(df, cfg.get("variables", []))
+    else: raise ValueError(f"Unknown action {action!r}")
+    result.setdefault("valid", True)
+    result["source_file"] = Path(cfg["file"]).name
+    result["source_rows"] = int(len(df))
+    result["source_columns"] = int(len(df.columns))
+    result["software"] = {"python": sys.version.split()[0], "pandas": pd.__version__, "numpy": np.__version__, "scipy": __import__("scipy").__version__}
+    for package in ("statsmodels", "pyreadstat"):
+        try:
+            result["software"][package] = __import__(package).__version__
+        except ImportError:
+            pass
+    return clean(result)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, help="Path to UTF-8 JSON analysis request")
-    parser.add_argument("--output", help="Write JSON results here (default: stdout)")
+    parser.add_argument("--output", help="Write results here (default: stdout)")
+    parser.add_argument("--format", choices=["json", "text", "markdown"], default="json",
+                        help="json (default, the stable machine contract), or SPSS-style text/markdown tables")
+    parser.add_argument("--plots-dir", help="Also write PNG charts for this analysis into this directory (needs matplotlib)")
     args = parser.parse_args()
     try:
         with open(args.config, encoding="utf-8") as f:
             cfg = json.load(f)
         if not isinstance(cfg, dict):
             raise ValueError("Request must be a JSON object")
-        if not isinstance(cfg.get("action", "inventory"), str):
-            raise ValueError("action must be a string")
         df = load_data(cfg)
-        action = cfg.get("action", "inventory").lower()
-        if action == "inventory": result = inventory(df)
-        elif action == "describe": result = describe(df, cfg.get("variables", list(df.columns)))
-        elif action == "frequencies": result = frequencies(df, cfg.get("variables", []))
-        elif action == "crosstab": result = crosstab(df, cfg.get("row", ""), cfg.get("column", ""))
-        elif action == "ttest": result = ttest(df, cfg)
-        elif action == "anova": result = anova(df, cfg)
-        elif action == "correlation": result = correlation(df, cfg)
-        elif action == "regression": result = regression(df, cfg)
-        elif action == "alpha": result = alpha(df, cfg.get("variables", []))
-        else: raise ValueError(f"Unknown action {action!r}")
-        result.setdefault("valid", True)
-        result["source_file"] = Path(cfg["file"]).name
-        result["source_rows"] = int(len(df))
-        result["source_columns"] = int(len(df.columns))
-        result["software"] = {"python": sys.version.split()[0], "pandas": pd.__version__, "numpy": np.__version__, "scipy": __import__("scipy").__version__}
-        for package in ("statsmodels", "pyreadstat"):
-            try:
-                result["software"][package] = __import__(package).__version__
-            except ImportError:
-                pass
-        text = json.dumps(clean(result), indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+        result = run_request(cfg, df)
+        if args.plots_dir:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import spss_plots
+            result["plots"] = [str(p) for p in spss_plots.make_plots(df, cfg, result, args.plots_dir)]
+        if args.format == "json":
+            text = json.dumps(clean(result), indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+        else:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import spss_format
+            text = spss_format.format_result(result, style="markdown" if args.format == "markdown" else "text") + "\n"
         if args.output:
             Path(args.output).write_text(text, encoding="utf-8")
         else:

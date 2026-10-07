@@ -1,0 +1,255 @@
+SPSS-style output gallery
+=========================
+Generated from the shipped examples/ requests with:
+  python scripts/analyze.py --config examples/<name>-request.json --format text
+A test keeps this file in sync with the code.
+
+
+
+##### examples/describe-request.json #####
+
+Descriptives
+
+Descriptive Statistics
++----------+----+---------+---------+---------+--------+------------+----------------+--------+--------+--------+----------+
+| Variable |  N | Missing | Minimum | Maximum |   Mean | Std. Error | Std. Deviation | Median |   25th |   75th | Skewness |
++----------+----+---------+---------+---------+--------+------------+----------------+--------+--------+--------+----------+
+| score    | 12 |       0 |  68.000 |  88.000 | 76.917 |      1.756 |          6.082 | 76.000 | 72.750 | 80.500 |    0.392 |
+| age      | 12 |       0 |  21.000 |  42.000 | 30.833 |      1.980 |          6.860 | 30.500 | 25.500 | 35.500 |    0.135 |
++----------+----+---------+---------+---------+--------+------------+----------------+--------+--------+--------+----------+
+Std. Deviation uses n-1. Percentiles are linear-interpolated and may differ slightly from SPSS's default weighted-average method.
+
+
+##### examples/frequencies-request.json #####
+
+Frequencies
+
+Statistics
++----------+---------+-----------+
+| Variable | N Valid | N Missing |
++----------+---------+-----------+
+| group    |      12 |         0 |
++----------+---------+-----------+
+
+Frequencies: group
++---------------+-----------+---------+---------------+--------------------+
+| Value         | Frequency | Percent | Valid Percent | Cumulative Percent |
++---------------+-----------+---------+---------------+--------------------+
+| active        |         6 |    50.0 |          50.0 |               50.0 |
+| control       |         6 |    50.0 |          50.0 |              100.0 |
+| Total (valid) |        12 |   100.0 |         100.0 |                    |
++---------------+-----------+---------+---------------+--------------------+
+Valid N = 12; Missing N = 0.
+
+
+##### examples/crosstab-request.json #####
+
+Crosstabs
+
+Case Processing Summary
++----------+----+---------+
+|          |  N | Percent |
++----------+----+---------+
+| Valid    | 12 |   100.0 |
+| Excluded |  0 |     0.0 |
+| Total    | 12 |   100.0 |
++----------+----+---------+
+
+group * event Crosstabulation
++---------+----------------+---------+---------+-------+
+| group   |                | event=0 | event=1 | Total |
++---------+----------------+---------+---------+-------+
+| active  | Count          |       2 |       4 |     6 |
+|         | % within group |    33.3 |    66.7 | 100.0 |
+| control | Count          |       5 |       1 |     6 |
+|         | % within group |    83.3 |    16.7 | 100.0 |
+| Total   | Count          |       7 |       5 |    12 |
+|         | % within event |    58.3 |    41.7 | 100.0 |
++---------+----------------+---------+---------+-------+
+
+Chi-Square Tests
++--------------------+-------+----+-----------------------+
+|                    | Value | df | Asymp. Sig. (2-sided) |
++--------------------+-------+----+-----------------------+
+| Pearson Chi-Square | 3.086 |  1 |                  .079 |
+| N of Valid Cases   |    12 |    |                       |
++--------------------+-------+----+-----------------------+
+4 cells have expected count less than 5. The minimum expected count is 2.50. Chi-square approximation may be unreliable; consider Fisher's exact test for 2x2 tables.
+No continuity correction or likelihood-ratio/Fisher rows are computed by this helper.
+
+Symmetric Measures
++------------------+-------+
+|                  | Value |
++------------------+-------+
+| Cramer's V       | 0.507 |
+| N of Valid Cases |    12 |
++------------------+-------+
+Cramer's V is computed from the Pearson chi-square; Phi equals V for a 2x2 table.
+
+Data audit:
+- Rows read: 12; rows used: 12
+
+
+##### examples/ttest-request.json #####
+
+T-Test
+
+Group Statistics
++---------+---+--------+----------------+-----------------+
+| group   | N |   Mean | Std. Deviation | Std. Error Mean |
++---------+---+--------+----------------+-----------------+
+| control | 6 | 72.500 |          3.271 |           1.335 |
+| active  | 6 | 81.333 |          4.885 |           1.994 |
++---------+---+--------+----------------+-----------------+
+Dependent variable: score.
+
+Independent Samples Test
++-------------------------------------+--------+-------+-----------------+-----------------+-----------------------+--------------+--------------+
+|                                     |      t |    df | Sig. (2-tailed) | Mean Difference | Std. Error Difference | 95% CI Lower | 95% CI Upper |
++-------------------------------------+--------+-------+-----------------+-----------------+-----------------------+--------------+--------------+
+| Equal variances not assumed (Welch) | -3.680 | 8.733 |            .005 |          -8.833 |                 2.400 |      -14.288 |       -3.378 |
++-------------------------------------+--------+-------+-----------------+-----------------+-----------------------+--------------+--------------+
+Mean difference = mean(control) - mean(active).
+Levene's test and the pooled-variance row are not computed by this helper; Welch is reported as the robust default.
+
+Independent Samples Effect Size
++------------------------------------+----------------+
+|                                    | Point Estimate |
++------------------------------------+----------------+
+| Cohen's d (pooled SD, descriptive) |         -2.125 |
++------------------------------------+----------------+
+
+Data audit:
+- Rows read: 12; rows used: 12
+
+
+##### examples/anova-request.json #####
+
+Oneway
+
+Descriptives: score
++---------+----+--------+----------------+------------+
+| group   |  N |   Mean | Std. Deviation | Std. Error |
++---------+----+--------+----------------+------------+
+| active  |  6 | 81.333 |          4.885 |      1.994 |
+| control |  6 | 72.500 |          3.271 |      1.335 |
+| Total   | 12 | 76.917 |                |            |
++---------+----+--------+----------------+------------+
+
+ANOVA: score
++----------------+----------------+----+-------------+--------+------+
+|                | Sum of Squares | df | Mean Square |      F | Sig. |
++----------------+----------------+----+-------------+--------+------+
+| Between Groups |        234.083 |  1 |     234.083 | 13.544 | .004 |
+| Within Groups  |        172.833 | 10 |      17.283 |        |      |
+| Total          |        406.917 | 11 |             |        |      |
++----------------+----------------+----+-------------+--------+------+
+Eta squared = 0.575.
+Homogeneity of variance (Levene) and post hoc tests are not computed by this helper.
+
+Data audit:
+- Rows read: 12; rows used: 12
+
+Note: Classical one-way ANOVA; equal-variance robustness not assessed by this helper.
+
+
+##### examples/correlation-request.json #####
+
+Correlations
+
+Correlations
++-------+---------------------+------+-------+
+|       |                     |  age | score |
++-------+---------------------+------+-------+
+| age   | Pearson Correlation |    1 |  .610 |
+|       | Sig. (2-tailed)     |      |  .035 |
+|       | N                   |      |    12 |
+| score | Pearson Correlation | .610 |     1 |
+|       | Sig. (2-tailed)     | .035 |       |
+|       | N                   |   12 |       |
++-------+---------------------+------+-------+
+Missing data policy: pairwise-complete per variable pair. N is per pair.
+No multiplicity adjustment is applied; with many pairs, treat p-values as exploratory.
+Sig. is two-tailed.
+
+Data audit:
+- Rows read: 12; rows used differ by variable pair (see pairwise N)
+
+
+##### examples/regression-linear-request.json #####
+
+Regression
+
+Model Summary
++-------+----------+-------------------+----------------------------+
+| R     | R Square | Adjusted R Square | Std. Error of the Estimate |
++-------+----------+-------------------+----------------------------+
+| 0.610 |    0.372 |             0.309 |                      5.056 |
++-------+----------+-------------------+----------------------------+
+Dependent variable: score. Predictors: (Constant), age.
+
+ANOVA
++------------+----------------+----+-------------+-------+------+
+|            | Sum of Squares | df | Mean Square |     F | Sig. |
++------------+----------------+----+-------------+-------+------+
+| Regression |        151.269 |  1 |     151.269 | 5.917 | .035 |
+| Residual   |        255.648 | 10 |      25.565 |       |      |
+| Total      |        406.917 | 11 |             |       |      |
++------------+----------------+----+-------------+-------+------+
+
+Coefficients
++------------+--------+------------+------+-------+------+------------------+------------------+
+|            |      B | Std. Error | Beta |     t | Sig. | 95% CI Lower (B) | 95% CI Upper (B) |
++------------+--------+------------+------+-------+------+------------------+------------------+
+| (Constant) | 60.249 |      7.006 |      | 8.600 | .000 |           44.639 |           75.859 |
+| age        |  0.541 |      0.222 | .610 | 2.433 | .035 |            0.045 |            1.036 |
++------------+--------+------------+------+-------+------+------------------+------------------+
+Dependent variable: score. Classical (non-robust) standard errors.
+
+Data audit:
+- Rows read: 12; rows used: 12
+
+Note: Numeric predictors only. Classical standard errors; residual and collinearity diagnostics are not included.
+
+
+##### examples/regression-logistic-request.json #####
+
+Logistic Regression
+
+Omnibus Test of Model Coefficients
++-------+------------+----+------+
+|       | Chi-square | df | Sig. |
++-------+------------+----+------+
+| Model |      1.144 |  1 | .285 |
++-------+------------+----+------+
+
+Model Summary
++-------------------+----------------------+---------------------+-------------------+
+| -2 Log likelihood | Cox & Snell R Square | Nagelkerke R Square | McFadden R Square |
++-------------------+----------------------+---------------------+-------------------+
+| 15.156            |                0.091 |               0.122 |             0.070 |
++-------------------+----------------------+---------------------+-------------------+
+Event modeled: event = 1.
+
+Classification Table (cut value 0.5)
++--------------------+-------------+-------------+--------------------+
+| Observed           | Predicted 0 | Predicted 1 | Percentage Correct |
++--------------------+-------------+-------------+--------------------+
+| 0                  |           5 |           2 |               71.4 |
+| 1                  |           3 |           2 |               40.0 |
+| Overall Percentage |             |             |               58.3 |
++--------------------+-------------+-------------+--------------------+
+
+Variables in the Equation
++----------+--------+-------+-------+----+------+--------+---------------------+---------------------+
+|          |      B |  S.E. |  Wald | df | Sig. | Exp(B) | 95% CI Exp(B) Lower | 95% CI Exp(B) Upper |
++----------+--------+-------+-------+----+------+--------+---------------------+---------------------+
+| Constant | -3.444 | 3.133 | 1.208 |  1 | .272 |  0.032 |               0.000 |              14.837 |
+| age      |  0.100 | 0.098 | 1.042 |  1 | .307 |  1.105 |               0.912 |               1.338 |
++----------+--------+-------+-------+----+------+--------+---------------------+---------------------+
+Wald = (B / S.E.)^2. Intercept row is labeled Constant.
+
+Data audit:
+- Rows read: 12; rows used: 12
+
+Note: Numeric predictors only; assess separation, model specification, calibration, and logit linearity.

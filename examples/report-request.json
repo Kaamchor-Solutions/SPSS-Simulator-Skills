@@ -1,0 +1,13 @@
+{
+  "file": "examples/demo.csv",
+  "title": "Demo study: treatment group and score",
+  "analyses": [
+    {"action": "describe", "variables": ["score", "age"]},
+    {"action": "frequencies", "variables": ["group"]},
+    {"action": "ttest", "outcome": "score", "group": "group", "groups": ["control", "active"]},
+    {"action": "correlation", "variables": ["age", "score"], "method": "pearson"},
+    {"action": "regression", "outcome": "score", "predictors": ["age"], "model": "linear"},
+    {"action": "crosstab", "row": "group", "column": "event"}
+  ],
+  "plots": true
+}
