@@ -5,3 +5,6 @@ version: 0.1.0
 date-released: 2026-10-08
 type: software
 license: MIT
+repository-code: "https://github.com/Kaamchor-Solutions/SPSS-Simulator-Skills"
+authors:
+  - name: "Kaamchor Solutions"

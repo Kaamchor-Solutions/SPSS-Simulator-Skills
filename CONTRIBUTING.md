@@ -40,4 +40,4 @@ python -m unittest discover -s tests -v
 3. Run the tests and review generated output.
 4. Open a pull request with motivation, summary, test evidence, limitations, and any changes to statistical interpretation.
 
-By submitting a contribution, you agree that it may be distributed under the project’s license. The proposed license is MIT; see [`LICENSE`](LICENSE).
+By submitting a contribution, you agree that it may be distributed under the project’s [MIT License](LICENSE).

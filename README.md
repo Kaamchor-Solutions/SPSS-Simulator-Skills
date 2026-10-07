@@ -1,10 +1,28 @@
 # SPSS Simulator
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](scripts/requirements.txt)
+[![Tests](https://github.com/Kaamchor-Solutions/SPSS-Simulator-Skills/actions/workflows/tests.yml/badge.svg)](https://github.com/Kaamchor-Solutions/SPSS-Simulator-Skills/actions/workflows/tests.yml)
+[![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-Contributor%20Covenant-ff69b4.svg)](CODE_OF_CONDUCT.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 **A portable, LLM-guided workflow for transparent, SPSS-style statistical analysis.** It is not IBM SPSS and does not reproduce every SPSS procedure or output.
 
 The project combines an LLM skill (`SKILL.md`) with an optional Python helper for deterministic common calculations. The skill guides an assistant through file intake, variable definitions, analysis planning, data-preparation decisions, interpretation, and reproducibility. The helper reads supported data files and returns machine-readable JSON results.
 
 > **Important:** An LLM skill is instructions, not an installation. Uploading it to an AI platform does not automatically grant file access, code execution, connectors, or statistical libraries. Results must be computed by the companion or another real statistical runtime; the assistant must never invent outputs.
+
+## Table of contents
+
+- [What it supports](#what-it-supports)
+- [Quick start: run the Python helper](#quick-start-run-the-python-helper)
+- [Use as an LLM skill](#use-as-an-llm-skill)
+- [Repository layout](#repository-layout)
+- [Statistical and product boundaries](#statistical-and-product-boundaries)
+- [Privacy and security](#privacy-and-security)
+- [Contributing](#contributing)
+- [Citing this project](#citing-this-project)
+- [License and trademark](#license-and-trademark)
 
 ## What it supports
 
@@ -24,7 +42,7 @@ Input formats: CSV, TSV, Excel (`.xlsx`/`.xls`, depending on the installed engin
 
 ## Quick start: run the Python helper
 
-Requires Python 3.10 or newer (tested with Python 3.11) and pip.
+Requires Python 3.10 or newer (tested with Python 3.11 and 3.13) and pip.
 
 ```bash
 python -m venv .venv
@@ -52,6 +70,12 @@ python scripts/analyze.py --config request.json --output results.json
 
 `examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. More request examples are in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md).
 
+Run the unit tests to verify your environment:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
 ## Use as an LLM skill
 
 1. Upload `SKILL.md` to a platform that supports user-provided skills/instructions, or paste its contents into that platform’s equivalent project instructions.
@@ -60,6 +84,29 @@ python scripts/analyze.py --config request.json --output results.json
 4. Confirm variable labels, missing-value codes, group definitions, data design, and any transformations before relying on results.
 
 The precise import steps differ by platform. This repository does not promise compatibility with every vendor’s “skill” format.
+
+## Repository layout
+
+```text
+.
+├── SKILL.md                      # LLM skill instructions (upload or paste into an AI platform)
+├── scripts/
+│   ├── analyze.py                # Deterministic Python companion (JSON in → JSON out)
+│   └── requirements.txt
+├── docs/                         # Getting started; methods and limitations
+├── references/                   # Procedure guide and portable-runtime notes
+├── examples/                     # Fabricated demo data and sample requests
+├── templates/                    # Reusable analysis-report templates
+├── tests/                        # Unit tests (unittest)
+├── .github/                      # Issue/PR templates and CI workflow
+├── CHANGELOG.md
+├── CITATION.cff
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+└── SECURITY.md
+```
 
 ## Statistical and product boundaries
 
@@ -75,6 +122,10 @@ Do not commit private datasets, credentials, identifying information, or analysi
 
 Issues and pull requests are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) first. Report vulnerabilities privately using the repository owner’s GitHub Security Advisories if enabled; see [`SECURITY.md`](SECURITY.md).
 
+## Citing this project
+
+If you use this software in research or reporting, please cite it using the metadata in [`CITATION.cff`](CITATION.cff). Citation formats can be validated or exported with [cffconvert](https://github.com/citation-file-format/cffconvert).
+
 ## License and trademark
 
-The proposed license is MIT; the copyright-holder placeholder in [`LICENSE`](LICENSE) must be replaced before publication. See [`LICENSE`](LICENSE) for terms. “IBM” and “SPSS” are trademarks of their respective owners. This independent project is not affiliated with or endorsed by IBM.
+This project is released under the [MIT License](LICENSE). “IBM” and “SPSS” are trademarks of their respective owners. This independent project is not affiliated with or endorsed by IBM.

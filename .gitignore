@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Local/private data and generated output
+/data/
+/results/
+*.sav
+*.xlsx
+*.xls
+*.sqlite
+*.db
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Transient analysis requests and outputs at the repo root (examples/ stays tracked)
+/request.json
+/results.json
