@@ -1,0 +1,13 @@
+id,group,age,score,event
+P01,control,21,68,0
+P02,control,24,72,0
+P03,control,29,75,0
+P04,control,31,70,1
+P05,control,35,77,0
+P06,control,40,73,0
+P07,active,22,74,0
+P08,active,26,79,1
+P09,active,30,82,1
+P10,active,33,80,0
+P11,active,37,85,1
+P12,active,42,88,1

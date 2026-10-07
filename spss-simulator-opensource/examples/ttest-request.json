@@ -1,0 +1,7 @@
+{
+  "file": "examples/demo.csv",
+  "action": "ttest",
+  "outcome": "score",
+  "group": "group",
+  "groups": ["control", "active"]
+}

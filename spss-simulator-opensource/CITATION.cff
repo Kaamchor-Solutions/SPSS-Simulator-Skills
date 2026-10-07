@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using this metadata."
+title: "SPSS Simulator: SPSS-Style Statistical Analysis Skill and Python Helper"
+version: 0.1.0
+date-released: 2026-10-08
+type: software
+license: MIT

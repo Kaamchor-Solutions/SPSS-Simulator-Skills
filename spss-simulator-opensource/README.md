@@ -1,0 +1,80 @@
+# SPSS Simulator
+
+**A portable, LLM-guided workflow for transparent, SPSS-style statistical analysis.** It is not IBM SPSS and does not reproduce every SPSS procedure or output.
+
+The project combines an LLM skill (`SKILL.md`) with an optional Python helper for deterministic common calculations. The skill guides an assistant through file intake, variable definitions, analysis planning, data-preparation decisions, interpretation, and reproducibility. The helper reads supported data files and returns machine-readable JSON results.
+
+> **Important:** An LLM skill is instructions, not an installation. Uploading it to an AI platform does not automatically grant file access, code execution, connectors, or statistical libraries. Results must be computed by the companion or another real statistical runtime; the assistant must never invent outputs.
+
+## What it supports
+
+The bundled Python companion (`scripts/analyze.py`) supports:
+
+- Data inventory and missing/duplicate counts
+- Descriptive summaries and category frequencies
+- Crosstabs with Pearson chi-square and Cramér’s V
+- Welch independent and paired t-tests
+- Classical one-way ANOVA
+- Pearson and Spearman correlations
+- Ordinary least-squares (OLS) linear regression
+- Binary logistic regression
+- Cronbach’s alpha
+
+Input formats: CSV, TSV, Excel (`.xlsx`/`.xls`, depending on the installed engine), and SPSS `.sav` (with `pyreadstat`). Regression predictors in the helper must be numeric; binary logistic outcomes must be coded 0/1.
+
+## Quick start: run the Python helper
+
+Requires Python 3.10 or newer (tested with Python 3.11) and pip.
+
+```bash
+python -m venv .venv
+# macOS/Linux
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -r scripts/requirements.txt
+```
+
+Create `request.json`:
+
+```json
+{
+  "file": "examples/demo.csv",
+  "action": "describe",
+  "variables": ["score", "age"]
+}
+```
+
+Run the analysis:
+
+```bash
+python scripts/analyze.py --config request.json --output results.json
+```
+
+`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. More request examples are in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md).
+
+## Use as an LLM skill
+
+1. Upload `SKILL.md` to a platform that supports user-provided skills/instructions, or paste its contents into that platform’s equivalent project instructions.
+2. Provide the relevant procedure guide in [`references/procedure-guide.md`](references/procedure-guide.md) when the platform does not load linked files automatically.
+3. Upload a data file only through the platform’s supported, authorized file workflow. If the platform cannot run code, ask the assistant to generate runnable syntax or code instead of claiming analysis was executed.
+4. Confirm variable labels, missing-value codes, group definitions, data design, and any transformations before relying on results.
+
+The precise import steps differ by platform. This repository does not promise compatibility with every vendor’s “skill” format.
+
+## Statistical and product boundaries
+
+This project is a transparent starter tool, not a full SPSS clone, a substitute for a statistician, or a guarantee of scientifically appropriate results. The companion does not currently implement survey weights, filters, split-file state, user-defined SPSS missing values/value labels, multiple imputation, robust/clustered standard errors, exact tests, post-hoc families, mixed models, survival analysis, or broad SPSS syntax execution. See [`docs/methods-and-limitations.md`](docs/methods-and-limitations.md).
+
+The project does not establish causality, guarantee assumptions, or automatically infer the correct meaning of coded variables. Review the study design and analysis choices. Output may differ from IBM SPSS because procedures, options, defaults, versions, missing-data rules, and rounding differ.
+
+## Privacy and security
+
+Do not commit private datasets, credentials, identifying information, or analysis outputs containing sensitive data. The helper processes a file supplied by the user and writes summary JSON; it does not intentionally send data over the network. LLM platforms may process uploaded files under their own terms—review those terms and obtain authorization before uploading sensitive data. See [`SECURITY.md`](SECURITY.md).
+
+## Contributing
+
+Issues and pull requests are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) first. Report vulnerabilities privately using the repository owner’s GitHub Security Advisories if enabled; see [`SECURITY.md`](SECURITY.md).
+
+## License and trademark
+
+The proposed license is MIT; the copyright-holder placeholder in [`LICENSE`](LICENSE) must be replaced before publication. See [`LICENSE`](LICENSE) for terms. “IBM” and “SPSS” are trademarks of their respective owners. This independent project is not affiliated with or endorsed by IBM.
