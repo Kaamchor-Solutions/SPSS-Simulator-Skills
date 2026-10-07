@@ -108,7 +108,7 @@ Reverse-code items only according to the instrument’s scoring key before runni
 
 The helper writes JSON to stdout unless `--output` is specified. Keep the source dataset unchanged.
 
-Except for correlation (pairwise per variable pair, above), all actions analyze listwise-complete observations for their requested variables; crosstabs and paired t-tests omit incomplete pairs. Whenever a procedure drops rows, groups, or values, the result carries a `data_audit` object: `rows_total`, `rows_used`, and an `exclusions` list naming what was excluded and why (missing values, non-numeric values coerced to missing, incomplete rows or pairs, groups with too few observations). A non-empty `exclusions` list is a warning: check it before relying on the analysis N. Record that policy and the resulting N.
+Describe and frequencies summarize each variable separately; inventory retains all rows. Regression and alpha use listwise-complete cases, independent t-tests and ANOVA use usable outcomes within selected groups, and crosstabs and paired t-tests omit incomplete pairs. Correlation is pairwise per variable pair. Inferential procedures carry a `data_audit` object: `rows_total`, `rows_used`, and an `exclusions` list naming what was excluded and why (missing values, non-numeric values coerced to missing, incomplete rows or pairs, groups with too few observations). A non-empty `exclusions` list is a warning: check it before relying on the analysis N. Record that policy and the resulting N.
 
 The helper does not apply user-defined missing codes, filters, weights, or split-file settings.
 
@@ -117,3 +117,11 @@ Treat output as a calculation result, not as automatic validation of the researc
 ## 5. Use the LLM instructions
 
 `SKILL.md` is the core LLM instruction file. Upload or paste it into a platform’s custom-instructions/skill facility. Include `references/procedure-guide.md` if the platform cannot read companion reference files. The platform must separately support file upload and computation for end-to-end analysis; otherwise, the assistant should provide syntax/code or interpret output you provide.
+
+## Validation and result status
+
+Variable selections must be non-empty lists of distinct column names. Crosstab variables must be different. Numeric infinity values are rejected in requested columns (all columns for inventory), not silently treated as usable cases; explicitly correct or recode them first. No automatic recoding is performed.
+
+Inspect `valid` before interpretation. Undefined inference (constant correlation, zero-variance differences/groups/item totals, insufficient crosstab categories) returns `valid: false`, a reason, and no usable test result. Correlation also marks invalid pairs individually. Logistic fits report convergence and are invalid when nonconvergent or separation warnings occur; numerical exceptions exit nonzero. JSON output does not by itself mean valid inference.
+
+Audit counts are overlapping reason/variable incidences, not a disjoint partition. Do not sum exclusions to derive dropped rows. Use `rows_total - rows_used` for a procedure's unique dropped-row total; correlation instead reports each pair's N and dropped count and sets overall `rows_used` to null. ANOVA dropped-group `count` is the group's original row count; `usable_n` is its numeric, nonmissing outcome count. Describe and frequencies have per-variable missing counts rather than `data_audit`.

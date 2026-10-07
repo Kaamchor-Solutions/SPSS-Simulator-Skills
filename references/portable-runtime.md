@@ -10,7 +10,7 @@ A skill is an instruction package, not a software installation. Uploading the sk
 
 ## Companion script
 
-`../scripts/analyze.py` accepts a JSON configuration and reads CSV, TSV, Excel (`.xlsx`/`.xls` depending on installed engine), or SPSS `.sav` (requires `pyreadstat`). It writes a JSON result, with analysis summaries rather than a copied dataset. Supported actions and argument examples are embedded in `--help` and below. Install dependencies with:
+`../scripts/analyze.py` accepts a JSON configuration and reads CSV, TSV, Excel (`.xlsx`/`.xls` depending on installed engine), or SPSS `.sav` (requires `pyreadstat`). It writes a JSON result, with analysis summaries rather than a copied dataset. The `--help` output describes CLI flags; supported actions and argument examples are shown below. Install dependencies with:
 
 ```bash
 python -m pip install -r scripts/requirements.txt
@@ -48,4 +48,12 @@ Other examples:
 {"file":"study.sav","action":"inventory"}
 ```
 
-All analyses use listwise-complete observations for the variables named in that request, except crosstabs and paired t-tests omit incomplete pairs and correlation is computed pairwise per variable pair. Any dropped rows, groups, or values are reported in the result's `data_audit`. This helper does not infer user-defined SPSS missing-value codes, honor SPSS weights, filters, split-file settings, or apply value labels (labelled `.sav` variables are read as their underlying codes). The agent must surface this and verify data decisions. For regression, the initial helper accepts numeric predictors only; encode categorical predictors explicitly and document reference categories before use. Logistic outcomes must be coded 0/1. Results are not a substitute for domain review, design-aware inference, or licensed SPSS output.
+Inventory retains all rows. Describe/frequencies use per-variable nonmissing values and report missing counts. Regression/alpha are listwise, crosstabs/paired t-tests omit incomplete pairs, independent tests/ANOVA use usable outcomes within groups, and correlation is pairwise. Inferential procedures report exclusions in `data_audit`. This helper does not infer user-defined SPSS missing-value codes, honor SPSS weights, filters, split-file settings, or apply value labels (labelled `.sav` variables are read as their underlying codes). The agent must surface this and verify data decisions. For regression, the initial helper accepts numeric predictors only; encode categorical predictors explicitly and document reference categories before use. Logistic outcomes must be coded 0/1. Results are not a substitute for domain review, design-aware inference, or licensed SPSS output.
+
+## Validation and result status
+
+Variable selections must be non-empty lists of distinct column names. Crosstab variables must be different. Numeric infinity values are rejected in requested columns (all columns for inventory), not silently treated as usable cases; explicitly correct or recode them first. No automatic recoding is performed.
+
+Inspect `valid` before interpretation. Undefined inference (constant correlation, zero-variance differences/groups/item totals, insufficient crosstab categories) returns `valid: false`, a reason, and no usable test result. Correlation also marks invalid pairs individually. Logistic fits report convergence and are invalid when nonconvergent or separation warnings occur; numerical exceptions exit nonzero. JSON output does not by itself mean valid inference.
+
+Audit counts are overlapping reason/variable incidences, not a disjoint partition. Do not sum exclusions to derive dropped rows. Use `rows_total - rows_used` for a procedure's unique dropped-row total; correlation instead reports each pair's N and dropped count and sets overall `rows_used` to null. ANOVA dropped-group `count` is the group's original row count; `usable_n` is its numeric, nonmissing outcome count. Describe and frequencies have per-variable missing counts rather than `data_audit`.

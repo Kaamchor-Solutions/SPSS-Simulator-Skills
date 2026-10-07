@@ -1,5 +1,15 @@
 # Changelog
 
+## Second-audit correctness pass
+
+- Reject repeated item/predictor/correlation selections, empty selections and nonfinite inputs.
+- Prevent ANOVA group-name collisions and intercept/predictor name collisions.
+- Mark undefined tests and nonconvergent/separated logistic fits invalid.
+- Clarify per-variable/listwise/pairwise policies and overlapping audit counts.
+- Add 15 second-audit tests, including both infinity signs across 11 procedure variants.
+- Record statsmodels/pyreadstat versions when installed.
+
+
 This project follows a simple Keep a Changelog-style format. Versions use Semantic Versioning where practical.
 
 ## [Unreleased]

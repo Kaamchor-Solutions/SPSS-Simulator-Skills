@@ -47,6 +47,8 @@ def load_data(cfg):
         # not applied by default so labelled 0/1 variables stay numeric.
         kwargs = {"convert_categoricals": False}
         kwargs.update(cfg.get("read_spss", {}))
+        if kwargs.get("convert_categoricals") is not False:
+            raise ValueError("SAV value-label conversion is not supported; use underlying codes")
         try:
             return pd.read_spss(path, **kwargs)
         except ImportError as exc:
@@ -55,9 +57,22 @@ def load_data(cfg):
 
 
 def require_columns(df, names):
+    if not isinstance(names, list) or not names or any(not isinstance(n, str) for n in names):
+        raise ValueError("Variable selections must be a non-empty list of column names")
+    if len(set(names)) != len(names):
+        raise ValueError("Variable selections must contain distinct column names")
     absent = [n for n in names if n not in df.columns]
     if absent:
         raise ValueError(f"Columns not found: {absent}. Available columns: {list(df.columns)}")
+    for name in names:
+        numeric = pd.to_numeric(df[name], errors="coerce")
+        if np.isinf(numeric.to_numpy(dtype=float, na_value=np.nan)).any():
+            raise ValueError(f"Nonfinite infinity values in {name!r}; correct them or explicitly recode them before analysis")
+
+
+def invalid_result(action, reason, **fields):
+    return {"action": action, "valid": False, "status": "invalid", "reason": reason, **fields}
+
 
 
 def coercion_exclusion(df, name):
@@ -101,6 +116,7 @@ def numeric_series_audit(df, name):
 
 
 def inventory(df):
+    require_columns(df, list(df.columns))
     vars_out = []
     for name in df.columns:
         s = df[name]
@@ -172,6 +188,12 @@ def crosstab(df, row_name, col_name):
     tab = pd.crosstab(pair[row_name], pair[col_name], dropna=False)
     if tab.size == 0:
         raise ValueError("No complete observations for crosstab")
+    if min(tab.shape) < 2:
+        return invalid_result("crosstab", "Association requires at least two observed categories in both variables",
+                              n=len(pair), counts={str(i): {str(j): int(tab.loc[i,j]) for j in tab.columns} for i in tab.index},
+                              data_audit=make_audit(len(df), len(pair), [
+                                  {"reason": "row dropped: incomplete pair", "count": len(df)-len(pair)}
+                                  if len(df) != len(pair) else None]))
     chi, p, dof, expected = stats.chi2_contingency(tab, correction=False)
     n = int(tab.to_numpy().sum())
     denom = n * max(1, min(tab.shape[0] - 1, tab.shape[1] - 1))
@@ -201,6 +223,12 @@ def ttest(df, cfg):
         if len(pair) < 2:
             raise ValueError("Paired t-test requires at least two complete pairs")
         d = pair["y"] - pair["x"]
+        if d.std(ddof=1) == 0:
+            return invalid_result("ttest_paired", "Paired differences have zero variance; t inference is undefined",
+                                  n_pairs=len(pair), mean_difference_second_minus_first=float(d.mean()),
+                                  data_audit=make_audit(len(df), len(pair), y_excl + x_excl + [
+                                      {"reason": "row dropped: incomplete pair", "count": len(df)-len(pair)}
+                                      if len(df) != len(pair) else None]))
         res = stats.ttest_rel(pair["y"], pair["x"])
         se = d.std(ddof=1) / math.sqrt(len(d))
         ci = stats.t.interval(.95, len(d)-1, loc=d.mean(), scale=se) if se else (d.mean(), d.mean())
@@ -230,6 +258,11 @@ def ttest(df, cfg):
             raise ValueError(f"Group {group!r} needs at least two observations")
         vals.append(x)
         summaries.append({"group": clean(group), "n": int(len(x)), "mean": float(x.mean()), "sd": float(x.std(ddof=1))})
+    if all(v.var(ddof=1) == 0 for v in vals):
+        return invalid_result("ttest_independent_welch", "Both groups have zero variance; t inference is undefined",
+                              groups=summaries, data_audit=make_audit(len(df), sum(map(len, vals)), y_excl + [
+                                  {"reason": "row dropped: outside selected groups or incomplete", "count": len(df)-sum(map(len, vals))}
+                                  if len(df) != sum(map(len, vals)) else None]))
     test = stats.ttest_ind(vals[0], vals[1], equal_var=False)
     a, b = vals
     va, vb = a.var(ddof=1), b.var(ddof=1)
@@ -259,17 +292,23 @@ def anova(df, cfg):
     groups = []
     summaries = []
     dropped_groups = []
-    for label, subset in df.assign(__y=y).groupby(gname, observed=True, dropna=True):
-        vals = subset["__y"].dropna().astype(float)
+    grouped = pd.DataFrame({"group": df[gname], "outcome": y})
+    for label, subset in grouped.groupby("group", observed=True, dropna=True):
+        vals = subset["outcome"].dropna().astype(float)
         if len(vals) >= 2:
             groups.append(vals)
             summaries.append({"group": clean(label), "n": int(len(vals)), "mean": float(vals.mean()), "sd": float(vals.std(ddof=1))})
         else:
             dropped_groups.append({"reason": "group dropped: fewer than 2 usable observations",
-                                   "group": clean(label), "usable_n": int(len(vals))})
+                                   "group": clean(label), "usable_n": int(len(vals)), "count": int(len(subset))})
     if len(groups) < 2:
         extra = f" Dropped groups: {dropped_groups}." if dropped_groups else ""
         raise ValueError(f"ANOVA needs at least two groups with two observations each.{extra}")
+    if all(g.var(ddof=1) == 0 for g in groups):
+        return invalid_result("one_way_anova", "All groups have zero within-group variance; F inference is undefined",
+                              groups=summaries, data_audit=make_audit(len(df), sum(map(len, groups)), y_excl + [missing_exclusion(df, gname)] + dropped_groups + [
+                                  {"reason": "row dropped: missing outcome or group", "count": len(df)-sum(map(len, groups))-sum(g["usable_n"] for g in dropped_groups)}
+                                  if len(df)-sum(map(len, groups))-sum(g["usable_n"] for g in dropped_groups) else None]))
     f, p = stats.f_oneway(*groups)
     all_y = np.concatenate([g.to_numpy() for g in groups])
     grand = float(all_y.mean())
@@ -305,11 +344,17 @@ def correlation(df, cfg):
             pair = pd.DataFrame({"a": numeric_series(df, a), "b": numeric_series(df, b)}).dropna()
             if len(pair) < 3:
                 raise ValueError(f"Correlation {a}/{b} needs at least 3 complete pairs")
+            if pair.a.nunique() < 2 or pair.b.nunique() < 2:
+                out.append({"var1": a, "var2": b, "method": method, "n": len(pair),
+                            "n_dropped": len(df)-len(pair), "valid": False, "status": "invalid",
+                            "reason": "Constant input; correlation is undefined", "coefficient": None, "p_two_sided": None})
+                continue
             result = stats.pearsonr(pair.a, pair.b) if method == "pearson" else stats.spearmanr(pair.a, pair.b)
             out.append({"var1": a, "var2": b, "method": method, "n": int(len(pair)),
                         "n_dropped": int(len(df) - len(pair)),
                         "coefficient": float(result.statistic), "p_two_sided": float(result.pvalue)})
-    return {"action": "correlation", "method": method,
+    return {"action": "correlation", "method": method, "valid": all(p.get("valid", True) for p in out),
+            "status": "valid" if all(p.get("valid", True) for p in out) else "invalid",
             "missing_policy": "pairwise-complete per variable pair", "pairs": out,
             "data_audit": {"rows_total": int(len(df)), "rows_used": None, "exclusions": [e for e in exclusions if e]}}
 
@@ -321,6 +366,8 @@ def regression(df, cfg):
         raise ValueError("Regression requires statsmodels") from exc
     outcome = cfg.get("outcome")
     predictors = cfg.get("predictors", [])
+    if not isinstance(predictors, list):
+        raise ValueError("predictors must be a non-empty list of distinct column names")
     if not outcome or not predictors:
         raise ValueError("regression requires outcome and non-empty predictors")
     require_columns(df, [outcome] + predictors)
@@ -338,7 +385,11 @@ def regression(df, cfg):
     audit = make_audit(len(df), len(data), exclusions)
     if len(data) <= len(predictors) + 1:
         raise ValueError("Too few complete observations for this model")
-    X = sm.add_constant(data[predictors].astype(float), has_constant="add")
+    intercept = "const"
+    while intercept in data.columns:
+        intercept = "_" + intercept
+    X = data[predictors].astype(float).copy()
+    X.insert(0, intercept, 1.0)
     model_type = cfg.get("model", "linear").lower()
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -363,6 +414,12 @@ def regression(df, cfg):
             if y.nunique() != 2:
                 raise ValueError("Logistic outcome has only one observed class")
             fit = sm.Logit(y.astype(float), X).fit(disp=False, maxiter=200)
+            converged = bool(fit.mle_retvals.get("converged", False))
+            fit_warnings = [str(w.message) for w in caught]
+            if not converged or any("separation" in w.lower() for w in fit_warnings):
+                return invalid_result("binary_logistic_regression", "Logistic fit did not converge or shows separation; inference is not usable",
+                                      outcome=outcome, predictors=predictors, n=int(fit.nobs),
+                                      converged=converged, warnings=fit_warnings, data_audit=audit)
             ci = fit.conf_int()
             terms = {str(term): {"B_log_odds": float(fit.params[term]), "SE": float(fit.bse[term]),
                                  "CI95_B": [float(ci.loc[term, 0]), float(ci.loc[term, 1])],
@@ -371,7 +428,7 @@ def regression(df, cfg):
                                  "Wald_p": float(fit.pvalues[term])}
                      for term in fit.params.index}
             return {"action": "binary_logistic_regression", "outcome": outcome, "event_value": 1,
-                    "predictors": predictors, "n": int(fit.nobs), "terms": terms,
+                    "predictors": predictors, "n": int(fit.nobs), "terms": terms, "converged": converged,
                     "pseudo_R_squared_McFadden": float(fit.prsquared), "model_LR_p": float(fit.llr_pvalue),
                     "warnings": [str(w.message) for w in caught],
                     "note": "Numeric predictors only; assess separation, model specification, calibration, and logit linearity.",
@@ -399,7 +456,11 @@ def alpha(df, variables):
         raise ValueError("Not enough complete cases to estimate alpha")
     variances = x.var(axis=0, ddof=1)
     total_variance = x.sum(axis=1).var(ddof=1)
-    result = (k/(k-1)) * (1 - variances.sum()/total_variance) if total_variance > 0 else None
+    if total_variance <= 0:
+        return invalid_result("cronbach_alpha", "Total item-score variance is zero; alpha is undefined",
+                              items=variables, k=k, complete_case_n=len(x),
+                              data_audit=make_audit(len(df), len(x), exclusions))
+    result = (k/(k-1)) * (1 - variances.sum()/total_variance)
     return {"action": "cronbach_alpha", "items": variables, "k": k, "complete_case_n": int(len(x)),
             "alpha": float(result) if result is not None else None,
             "note": "Listwise-complete items; reverse-code according to the instrument key first. Alpha does not establish validity or unidimensionality.",
@@ -414,6 +475,10 @@ def main():
     try:
         with open(args.config, encoding="utf-8") as f:
             cfg = json.load(f)
+        if not isinstance(cfg, dict):
+            raise ValueError("Request must be a JSON object")
+        if not isinstance(cfg.get("action", "inventory"), str):
+            raise ValueError("action must be a string")
         df = load_data(cfg)
         action = cfg.get("action", "inventory").lower()
         if action == "inventory": result = inventory(df)
@@ -426,10 +491,16 @@ def main():
         elif action == "regression": result = regression(df, cfg)
         elif action == "alpha": result = alpha(df, cfg.get("variables", []))
         else: raise ValueError(f"Unknown action {action!r}")
+        result.setdefault("valid", True)
         result["source_file"] = Path(cfg["file"]).name
         result["source_rows"] = int(len(df))
         result["source_columns"] = int(len(df.columns))
         result["software"] = {"python": sys.version.split()[0], "pandas": pd.__version__, "numpy": np.__version__, "scipy": __import__("scipy").__version__}
+        for package in ("statsmodels", "pyreadstat"):
+            try:
+                result["software"][package] = __import__(package).__version__
+            except ImportError:
+                pass
         text = json.dumps(clean(result), indent=2, ensure_ascii=False, allow_nan=False) + "\n"
         if args.output:
             Path(args.output).write_text(text, encoding="utf-8")
