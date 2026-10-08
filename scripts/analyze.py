@@ -279,9 +279,19 @@ def ttest(df, cfg):
     ci = stats.t.interval(.95, dfw, loc=diff, scale=se) if se else (diff, diff)
     pooled = math.sqrt(((len(a)-1)*va + (len(b)-1)*vb)/(len(a)+len(b)-2))
     used = int(len(a) + len(b))
+    pooled_fit = __import__('statsmodels.stats.weightstats', fromlist=['CompareMeans','DescrStatsW'])
+    cm = pooled_fit.CompareMeans(pooled_fit.DescrStatsW(a), pooled_fit.DescrStatsW(b))
+    pt, pp, pdf = cm.ttest_ind(usevar="pooled")
+    pooled_row = {"t": pt, "df": pdf, "p_two_sided": pp,
+                  "standard_error": cm.std_meandiff_pooledvar,
+                  "difference_ci95": list(cm.tconfint_diff(usevar="pooled"))}
+    lv = stats.levene(a, b, center="mean")
+    levene_row = {"F": lv.statistic, "p": lv.pvalue, "df1": 1, "df2": used-2, "center": "mean",
+                  "valid": bool(np.isfinite(lv.statistic) and np.isfinite(lv.pvalue))}
     return {"action": "ttest_independent_welch", "outcome": yname, "group": gname, "groups": summaries,
             "mean_difference_first_minus_second": diff, "difference_ci95": list(ci), "t": float(test.statistic),
             "df_welch": float(dfw), "p_two_sided": float(test.pvalue),
+            "standard_error_welch": se, "pooled_variance": pooled_row, "levene": levene_row,
             "cohens_d_pooled_sd_descriptive": float(diff/pooled) if pooled else None,
             "data_audit": make_audit(len(df), used, y_excl + [
                 missing_exclusion(df, gname),
@@ -523,6 +533,12 @@ def run_request(cfg, df=None):
     elif action == "anova": result = anova(df, cfg)
     elif action == "correlation": result = correlation(df, cfg)
     elif action == "regression": result = regression(df, cfg)
+    elif action == "prepare":
+        from preparation import prepare_result
+        result = prepare_result(df, cfg)
+    elif action == "levene":
+        from procedures import levene
+        result = levene(df, cfg)
     elif action == "alpha": result = alpha(df, cfg.get("variables", []))
     else: raise ValueError(f"Unknown action {action!r}")
     result.setdefault("valid", True)

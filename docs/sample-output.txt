@@ -19,7 +19,6 @@ Descriptive Statistics
 +----------+----+---------+---------+---------+--------+------------+----------------+--------+--------+--------+----------+
 Std. Deviation uses n-1. Percentiles are linear-interpolated and may differ slightly from SPSS's default weighted-average method.
 
-
 ##### examples/frequencies-request.json #####
 
 Frequencies
@@ -40,7 +39,6 @@ Frequencies: group
 | Total (valid) |        12 |   100.0 |         100.0 |                    |
 +---------------+-----------+---------+---------------+--------------------+
 Valid N = 12; Missing N = 0.
-
 
 ##### examples/crosstab-request.json #####
 
@@ -89,7 +87,6 @@ Cramer's V is computed from the Pearson chi-square; Phi equals V for a 2x2 table
 Data audit:
 - Rows read: 12; rows used: 12
 
-
 ##### examples/ttest-request.json #####
 
 T-Test
@@ -104,13 +101,21 @@ Group Statistics
 Dependent variable: score.
 
 Independent Samples Test
-+-------------------------------------+--------+-------+-----------------+-----------------+-----------------------+--------------+--------------+
-|                                     |      t |    df | Sig. (2-tailed) | Mean Difference | Std. Error Difference | 95% CI Lower | 95% CI Upper |
-+-------------------------------------+--------+-------+-----------------+-----------------+-----------------------+--------------+--------------+
-| Equal variances not assumed (Welch) | -3.680 | 8.733 |            .005 |          -8.833 |                 2.400 |      -14.288 |       -3.378 |
-+-------------------------------------+--------+-------+-----------------+-----------------+-----------------------+--------------+--------------+
++-------------------------------------+--------+--------+-----------------+-----------------+-----------------------+--------------+--------------+
+|                                     |      t |     df | Sig. (2-tailed) | Mean Difference | Std. Error Difference | 95% CI Lower | 95% CI Upper |
++-------------------------------------+--------+--------+-----------------+-----------------+-----------------------+--------------+--------------+
+| Equal variances assumed             | -3.680 | 10.000 |            .004 |          -8.833 |                 2.400 |      -14.181 |       -3.485 |
+| Equal variances not assumed (Welch) | -3.680 |  8.733 |            .005 |          -8.833 |                 2.400 |      -14.288 |       -3.378 |
++-------------------------------------+--------+--------+-----------------+-----------------+-----------------------+--------------+--------------+
 Mean difference = mean(control) - mean(active).
-Levene's test and the pooled-variance row are not computed by this helper; Welch is reported as the robust default.
+Welch is the robust default; do not select a row solely from a Levene p-value.
+
+Levene's Test for Equality of Variances
++--------+-------+-----+-----+------+
+| Center |     F | df1 | df2 | Sig. |
++--------+-------+-----+-----+------+
+| mean   | 0.747 |   1 |  10 | .408 |
++--------+-------+-----+-----+------+
 
 Independent Samples Effect Size
 +------------------------------------+----------------+
@@ -121,7 +126,6 @@ Independent Samples Effect Size
 
 Data audit:
 - Rows read: 12; rows used: 12
-
 
 ##### examples/anova-request.json #####
 
@@ -152,7 +156,6 @@ Data audit:
 
 Note: Classical one-way ANOVA. Legacy default drops singleton groups; retain is recommended when they belong to the design. No automatic equal-variance decision.
 
-
 ##### examples/correlation-request.json #####
 
 Correlations
@@ -174,7 +177,6 @@ Sig. is two-tailed.
 
 Data audit:
 - Rows read: 12; rows used differ by variable pair (see pairwise N)
-
 
 ##### examples/regression-linear-request.json #####
 
@@ -210,7 +212,6 @@ Data audit:
 - Rows read: 12; rows used: 12
 
 Note: Numeric predictors only. Classical standard errors; residual and collinearity diagnostics are not included.
-
 
 ##### examples/regression-logistic-request.json #####
 

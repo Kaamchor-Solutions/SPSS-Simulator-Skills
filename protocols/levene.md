@@ -5,16 +5,16 @@ Not a normality test. A nonsignificant result does not prove equal variances.
 Do not use ordinary inference for clustered, survey-weighted or censored data.
 
 ## Required fields and measurement levels
-outcome: scale; group: nominal. Action/interface: `guidance-only until phase 1B`.
+outcome: scale; group: nominal. Action/interface: `levene`.
 
 ## Assumptions: evidence versus diagnostics
 User evidence must establish design, units, independence, sampling and coding. The helper cannot verify those facts. Inspect available missingness, counts, variance, convergence and sparse-cell diagnostics; unavailable diagnostics have not passed.
 
 ## Computation status
-guidance-only. Run executable code; never estimate statistics with an LLM. Invalid results must not be interpreted as inference.
+helper-supported. Run executable code; never estimate statistics with an LLM. Invalid results must not be interpreted as inference.
 
 ## Output contract
-Mean-centered Levene F, dfs, p (not yet executable in phase 1A). Existing JSON keys remain stable; new keys are additive. Validity, source and software fields accompany helper requests.
+Mean-centered Levene F, dfs, p. Existing JSON keys remain stable; new keys are additive. Validity, source and software fields accompany helper requests.
 
 ## Validation
 Check analysis N, exclusions, statistic/df/CI bounds and finite results against tests and a second library call where practical. Record settings and uncertainty.

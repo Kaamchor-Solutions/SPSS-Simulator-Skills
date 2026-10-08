@@ -55,3 +55,46 @@ def test_noisy_multi_predictor_exact(model):
         assert term['B' if model=='linear' else 'B_log_odds']==pytest.approx(ref.params[name],abs=1e-10)
         assert term['SE']==pytest.approx(ref.bse[name],abs=1e-10)
         assert term['CI95' if model=='linear' else 'CI95_B']==pytest.approx(ref.conf_int().loc[name].tolist(),abs=1e-10)
+
+@pytest.mark.parametrize('constant',[False,True])
+def test_levene(constant):
+    df=pd.DataFrame(dict(g=['a']*4+['b']*5,y=[1]*9 if constant else [1,2,5,9,2,3,6,12,17]))
+    r=run(df,action='levene',outcome='y',group='g')
+    if constant:
+        assert r['valid'] is False
+    else:
+        ref=stats.levene(df.y[:4],df.y[4:],center='mean')
+        assert r['F']==pytest.approx(ref.statistic) and r['p']==pytest.approx(ref.pvalue)
+        assert r['df2']==7
+
+def test_pooled_t_and_zero_diff_se():
+    import spss_format
+    df=pd.DataFrame(dict(g=['a']*3+['b']*4,y=[1,2,3,0,1,3,4]))
+    r=run(df,action='ttest',outcome='y',group='g')
+    ref=stats.ttest_ind(df.y[:3],df.y[3:],equal_var=True)
+    assert r['pooled_variance']['t']==pytest.approx(ref.statistic)
+    assert r['standard_error_welch']>0
+    text=spss_format.format_result(r)
+    assert 'Equal variances assumed' in text and "Levene's Test" in text
+
+@pytest.mark.parametrize('rule',[
+    dict(kind='recode',source='x',target='x',values=[{'from':1,'to':2}]),
+    dict(kind='range',source='x',target='z',ranges=[dict(min=0,max=5,to=1),dict(min=1,max=8,to=2)]),
+    dict(kind='dummy',source='g',target='z',levels=['a','c'],reference='a'),
+    dict(kind='recode',source='g',target='z',values=[{'from':'a','to':0}],unmatched='error'),
+])
+def test_prepare_invalid(rule):
+    with pytest.raises(ValueError):
+        run(pd.DataFrame(dict(x=[1,3],g=['a','b'])),action='prepare',rules=[rule])
+
+def test_prepare_preserves_source():
+    df=pd.DataFrame(dict(x=[1,3,7,None],g=['a','b','b',None])); original=df.copy()
+    r=run(df,action='prepare',rules=[dict(kind='range',source='x',target='band',ranges=[dict(min=0,max=3,to=0),dict(min=3,max=8,to=1)],unmatched='missing'),dict(kind='dummy',source='g',target='d',levels=['a','b'],reference='a')])
+    pd.testing.assert_frame_equal(df,original)
+    assert [a['band'] for a in r['records']]==[0,1,1,None]
+    assert [a['d_1'] for a in r['records']]==[0,1,1,None]
+    assert r['transformations'][0]['matched']==3
+
+def test_recode_typed():
+    r=run(pd.DataFrame(dict(x=[1,'1',None])),action='prepare',rules=[dict(kind='recode',source='x',target='z',values=[{'from':1,'to':'numeric'},{'from':'1','to':'text'}])])
+    assert [a['z'] for a in r['records']]==['numeric','text',None]

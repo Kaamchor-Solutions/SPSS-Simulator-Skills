@@ -25,3 +25,6 @@ SPSS-style tables are not licensed SPSS output. Compare filters, missing rules, 
 
 ## Interpretation and alternatives
 Describe estimates, direction and uncertainty, not just significance. Use design-appropriate robust/rank/exact alternatives when justified; they may target different estimands. Read `validation-and-parity.md` before claiming parity.
+
+## Additional output
+`pooled_variance` contains t, df, p, SE and CI computed by statsmodels CompareMeans. `levene` contains mean-centered scipy F, df1, df2, p and validity. Both variance rows are displayed; legacy Welch keys are unchanged.

@@ -159,7 +159,7 @@ def spss_syntax(cfg, res):
         g = cfg.get("groups") or [x["group"] for x in res.get("groups", [])]
         codes = " ".join(str(x) for x in g)
         return (f"T-TEST GROUPS={cfg.get('group')}({codes}) /VARIABLES={cfg['outcome']} /CRITERIA=CI(.95).\n"
-                "* SPSS prints both equal-variance and Welch rows; this report uses the Welch (equal variances not assumed) row.")
+                "* Both equal-variance and Welch rows are computed; interpretation defaults to Welch.")
     if a == "anova":
         return f"ONEWAY {cfg['outcome']} BY {cfg['group']} /STATISTICS DESCRIPTIVES HOMOGENEITY."
     if a == "correlation":
