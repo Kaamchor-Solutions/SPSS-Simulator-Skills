@@ -533,6 +533,18 @@ def run_request(cfg, df=None):
     elif action == "anova": result = anova(df, cfg)
     elif action == "correlation": result = correlation(df, cfg)
     elif action == "regression": result = regression(df, cfg)
+    elif action in ("mann_whitney", "wilcoxon", "kruskal_wallis"):
+        from procedures import nonparametric
+        result = nonparametric(df, cfg)
+    elif action == "fisher_exact":
+        from procedures import fisher
+        result = fisher(df, cfg)
+    elif action == "welch_anova":
+        from procedures import welch_anova
+        result = welch_anova(df, cfg)
+    elif action in ("tukey", "games_howell"):
+        from procedures import posthoc
+        result = posthoc(df, cfg)
     elif action == "prepare":
         from preparation import prepare_result
         result = prepare_result(df, cfg)

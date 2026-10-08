@@ -55,3 +55,6 @@ Audit counts are overlapping reason/variable incidences, not a disjoint partitio
 ## Formatted output scope
 
 The tables imitate SPSS layout and naming, not every SPSS option. Not computed: Levene's test and the pooled-variance t row, post hoc tests, Fisher exact and likelihood-ratio chi-square rows, collinearity and Durbin-Watson statistics, Hosmer-Lemeshow. Percentiles use linear interpolation (SPSS defaults to weighted average), so quartiles can differ slightly. ANOVA sums of squares, the regression ANOVA table, Wald statistics and standard errors of differences are exact arithmetic on the computed results. Report interpretation text is generated from the numbers and is deliberately association-only; review it against the study design.
+
+## Added rank, exact and robust procedures
+Read protocols/mann-whitney.md through protocols/posthoc-games-howell.md for exact defaults. Rank methods default to asymptotic, two-sided, continuity-corrected inference where applicable; exact tied/zero cases fail rather than silently changing methods. Kruskal-Wallis uses asymptotic chi-square. Fisher uses probability ordering. Post hoc alpha=.05, multiplicity within the requested family, not across separate calls. Requires scipy>=1.15, statsmodels>=0.15 (Games-Howell support). No assumption-test-driven automatic row selection.

@@ -29,6 +29,14 @@ Read only the relevant relative protocol file before selecting, computing or int
 | validation-and-parity | [protocols/validation-and-parity.md](protocols/validation-and-parity.md) |
 | reporting | [protocols/reporting.md](protocols/reporting.md) |
 
+| mann-whitney | [protocols/mann-whitney.md](protocols/mann-whitney.md) |
+| wilcoxon | [protocols/wilcoxon.md](protocols/wilcoxon.md) |
+| kruskal-wallis | [protocols/kruskal-wallis.md](protocols/kruskal-wallis.md) |
+| fisher-exact | [protocols/fisher-exact.md](protocols/fisher-exact.md) |
+| welch-anova | [protocols/welch-anova.md](protocols/welch-anova.md) |
+| posthoc-tukey | [protocols/posthoc-tukey.md](protocols/posthoc-tukey.md) |
+| posthoc-games-howell | [protocols/posthoc-games-howell.md](protocols/posthoc-games-howell.md) |
+
 ## First response and intake
 
 When the user invokes the skill without a dataset or a defined task, warmly start the project and ask them to:
@@ -82,7 +90,7 @@ The helper has three presentation layers on top of the unchanged JSON contract. 
 Rules when driving these layers:
 
 - Respect `valid: false`. The tables print "RESULT INVALID" and the reason; report that, never a substitute number.
-- Quote the **Note**/footnote lines. They say which SPSS rows are not computed (Levene, pooled-variance t, post hoc, Fisher), so do not claim them.
+- Quote the **Note**/footnote lines. They identify procedure limitations. Levene/pooled t are included for independent t; Fisher and post hoc procedures are separate explicit actions, never implied by a crosstab or ANOVA.
 - Interpretation sentences are generated from the numbers. Keep their hedging: association not causation, significance is not importance, exploratory when many tests.
 - The tables follow SPSS layout, not SPSS's every digit: percentile method, rounding and defaults can differ. Say "SPSS-style", never "SPSS output".
 - Show the user the report file or the tables; do not paste raw JSON unless asked. Keep the exact commands/request so the analysis can be re-run.

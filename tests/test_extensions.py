@@ -98,3 +98,78 @@ def test_prepare_preserves_source():
 def test_recode_typed():
     r=run(pd.DataFrame(dict(x=[1,'1',None])),action='prepare',rules=[dict(kind='recode',source='x',target='z',values=[{'from':1,'to':'numeric'},{'from':'1','to':'text'}])])
     assert [a['z'] for a in r['records']]==['numeric','text',None]
+
+@pytest.fixture
+def rank_data():
+    return pd.DataFrame(dict(g=['a']*4+['b']*5+['c']*3,y=[1,2,2,5,2,4,7,9,11,3,6,8]))
+
+@pytest.mark.parametrize('action',['mann_whitney','kruskal_wallis','welch_anova','tukey','games_howell'])
+def test_phase2_library_agreement(rank_data,action):
+    import spss_format
+    groups=['a','b'] if action=='mann_whitney' else ['a','b','c']
+    vals=[rank_data.y[rank_data.g==g].to_numpy() for g in groups]
+    r=run(rank_data,action=action,outcome='y',group='g',groups=groups)
+    if action=='mann_whitney':
+        ref=stats.mannwhitneyu(*vals,method='asymptotic',use_continuity=True)
+        assert r['statistic']==pytest.approx(ref.statistic);assert r['p']==pytest.approx(ref.pvalue)
+    elif action=='kruskal_wallis':
+        ref=stats.kruskal(*vals);assert r['statistic']==pytest.approx(ref.statistic);assert r['p']==pytest.approx(ref.pvalue)
+    elif action=='welch_anova':
+        from statsmodels.stats.oneway import anova_oneway
+        ref=anova_oneway(vals,use_var='unequal',welch_correction=True)
+        assert r['F']==pytest.approx(ref.statistic);assert r['df2']==pytest.approx(ref.df_denom)
+    else:
+        from statsmodels.stats.multicomp import pairwise_tukeyhsd
+        ref=pairwise_tukeyhsd(rank_data.y,rank_data.g,use_var='equal' if action=='tukey' else 'unequal')
+        assert [p['p_adjusted'] for p in r['comparisons']]==pytest.approx(ref.pvalues)
+        assert np.array([p['ci95'] for p in r['comparisons']])==pytest.approx(ref.confint)
+    assert spss_format.format_result(r,style='markdown')
+    assert spss_report.interpret(r)
+
+@pytest.mark.parametrize('action',['mann_whitney','wilcoxon'])
+def test_exact_ties_rejected(action,rank_data):
+    with pytest.raises(ValueError,match='Exact'):
+        if action=='mann_whitney':
+            run(rank_data,action=action,outcome='y',group='g',groups=['a','b'],method='exact')
+        else:
+            run(pd.DataFrame(dict(before=[1,2,3,4],after=[2,3,3,6])),action=action,outcome='after',paired_with='before',method='exact')
+
+@pytest.mark.parametrize('zero',['wilcox','pratt','zsplit'])
+def test_wilcoxon_zeros(zero):
+    d=np.array([0,1,2,2,-3,4,-1,0])
+    df=pd.DataFrame(dict(before=np.arange(8),after=np.arange(8)+d))
+    r=run(df,action='wilcoxon',outcome='after',paired_with='before',zero_method=zero)
+    ref=stats.wilcoxon(d,zero_method=zero,method='asymptotic',correction=True)
+    assert r['p']==pytest.approx(ref.pvalue) and r['statistic']==pytest.approx(ref.statistic)
+    assert r['zero_count']==2
+
+@pytest.mark.parametrize('action',['mann_whitney','wilcoxon'])
+def test_exact_untied(action):
+    if action=='mann_whitney':
+        df=pd.DataFrame(dict(g=['a']*3+['b']*3,y=[1,2,7,3,4,8]))
+        r=run(df,action=action,outcome='y',group='g',method='exact')
+        ref=stats.mannwhitneyu([1,2,7],[3,4,8],method='exact')
+    else:
+        df=pd.DataFrame(dict(before=[0]*5,after=[1,-2,3,4,-5]))
+        r=run(df,action=action,outcome='after',paired_with='before',method='exact')
+        ref=stats.wilcoxon([1,-2,3,4,-5],method='exact')
+    assert r['p']==pytest.approx(ref.pvalue)
+
+def test_fisher_known():
+    table=np.array([[1,9],[11,3]])
+    rows=[(a,b) for a in range(2) for b in range(2) for _ in range(table[a,b])]
+    df=pd.DataFrame(rows,columns=['a','b'])
+    r=run(df,action='fisher_exact',row='a',column='b')
+    assert r['p']==pytest.approx(.0027594561852200836)
+    assert r['odds_ratio']==pytest.approx(1/33)
+
+@pytest.mark.parametrize('action',['welch_anova','games_howell','kruskal_wallis','wilcoxon'])
+def test_phase2_invalid_constant(action):
+    df=pd.DataFrame(dict(g=['a']*3+['b']*3,y=[1]*6,x=[1]*6))
+    cfg=dict(outcome='y',paired_with='x') if action=='wilcoxon' else dict(outcome='y',group='g')
+    r=run(df,action=action,**cfg)
+    assert r['valid'] is False
+
+def test_fisher_not_2x2(rank_data):
+    with pytest.raises(ValueError,match='2x2'):
+        run(rank_data,action='fisher_exact',row='g',column='y')

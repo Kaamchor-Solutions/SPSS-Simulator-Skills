@@ -125,6 +125,16 @@ def interpret(res):
         al = res["alpha"]
         band = "excellent" if al >= .9 else "good" if al >= .8 else "acceptable" if al >= .7 else "questionable" if al >= .6 else "poor"
         return [f"Internal consistency of the {res['k']} items was {band} by conventional thresholds, Cronbach's alpha = {_r(al)} (n = {res['complete_case_n']}). Alpha does not establish validity or unidimensionality."]
+    if a in ("mann_whitney","wilcoxon","kruskal_wallis","fisher_exact"):
+        return [f"{a}: statistic = {_n(res.get('statistic',res.get('odds_ratio')))}, {apa_p(res['p'])}, N = {res['n']}. {res['note']}"]
+    if a == "welch_anova":
+        return [f"Welch ANOVA F({_n(res['df1'])}, {_n(res['df2'])}) = {_n(res['F'])}, {apa_p(res['p'])}. {res['note']}"]
+    if a in ("tukey","games_howell"):
+        return [f"{a}: {len(res['comparisons'])} familywise-adjusted pairwise comparisons. See intervals and adjusted p-values in the computed table. {res['note']}"]
+    if a == "levene":
+        return [f"Mean-centered Levene F({res['df1']}, {res['df2']}) = {_n(res['F'])}, {apa_p(res['p'])}. This tests variance equality, not independence or normality."]
+    if a == "prepare":
+        return [f"Created derived fields using {len(res['transformations'])} documented rules. Source columns and all rows were preserved."]
     return []
 
 

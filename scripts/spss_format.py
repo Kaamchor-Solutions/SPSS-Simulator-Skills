@@ -457,6 +457,12 @@ def _extended(res):
         return [Table("Transformation audit", ["Kind","Source","Target / reference","Matched","Unmatched"], [[t["kind"],t["source"],t.get("target",t.get("reference")),t.get("matched"),t.get("unmatched_nonmissing")] for t in res["transformations"]], ["Source columns preserved. Raw records are not displayed in reports."])]
     if res["action"] == "levene":
         return [Table("Test of Homogeneity of Variances", ["Center","F","df1","df2","Sig."], [[res["center"],fnum(res["F"]),res["df1"],res["df2"],fsig(res["p"])]])]
+    if res["action"] in ("mann_whitney","wilcoxon","kruskal_wallis","fisher_exact"):
+        return [Table("Test Statistics", ["Procedure","N","Statistic / Odds ratio","df","Sig. (2-sided)","Method"], [[res["action"],res["n"],fnum(res.get("statistic",res.get("odds_ratio"))),res.get("df"),fsig(res["p"]),res["method"]]])]
+    if res["action"] == "welch_anova":
+        return [Table("Robust Tests of Equality of Means", ["","F","df1","df2","Sig."], [["Welch",fnum(res["F"]),fnum(res["df1"]),fnum(res["df2"]),fsig(res["p"])]])]
+    if res["action"] in ("tukey","games_howell"):
+        return [Table("Multiple Comparisons: " + res["action"], ["First","Second","Difference (second-first)","Sig. adjusted","CI Lower","CI Upper"], [[p["first"],p["second"],fnum(p["difference_second_minus_first"]),fsig(p["p_adjusted"]),fnum(p["ci95"][0]),fnum(p["ci95"][1])] for p in res["comparisons"]])]
     raise ValueError(f"No formatter for action {res['action']!r}")
 
 
