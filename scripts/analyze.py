@@ -150,7 +150,8 @@ def describe(df, variables):
             x = numeric.dropna()
             row = {"variable": name, "type": "numeric", "n": int(x.size), "missing_n": int(s.isna().sum()),
                    "mean": x.mean(), "sd_sample": x.std(ddof=1), "median": x.median(),
-                   "q1": x.quantile(.25), "q3": x.quantile(.75), "min": x.min(), "max": x.max(),
+                   "percentile_estimator": "linear interpolation, Hyndman-Fan type 7",
+                   "q1": x.quantile(.25, interpolation="linear"), "q3": x.quantile(.75, interpolation="linear"), "min": x.min(), "max": x.max(),
                    "skew": x.skew() if x.size >= 3 else None}
         else:
             counts = s.value_counts(dropna=True)
@@ -250,6 +251,11 @@ def ttest(df, cfg):
         groups = list(pd.unique(df[gname].dropna()))
     if len(groups) != 2 or groups[0] == groups[1]:
         raise ValueError(f"Independent t-test requires exactly two distinct groups; found {groups}")
+    observed = list(pd.unique(df[gname].dropna()))
+    unmatched = [g for g in groups if not df[gname].eq(g).any()]
+    if unmatched:
+        typed = [{"value": clean(g), "type": type(g).__name__} for g in observed]
+        raise ValueError(f"Unmatched group labels {unmatched!r}; observed values/types: {typed!r}. Labels must match storage types; no implicit coercion.")
     vals = []
     summaries = []
     for group in groups:
@@ -273,9 +279,19 @@ def ttest(df, cfg):
     ci = stats.t.interval(.95, dfw, loc=diff, scale=se) if se else (diff, diff)
     pooled = math.sqrt(((len(a)-1)*va + (len(b)-1)*vb)/(len(a)+len(b)-2))
     used = int(len(a) + len(b))
+    pooled_fit = __import__('statsmodels.stats.weightstats', fromlist=['CompareMeans','DescrStatsW'])
+    cm = pooled_fit.CompareMeans(pooled_fit.DescrStatsW(a), pooled_fit.DescrStatsW(b))
+    pt, pp, pdf = cm.ttest_ind(usevar="pooled")
+    pooled_row = {"t": pt, "df": pdf, "p_two_sided": pp,
+                  "standard_error": cm.std_meandiff_pooledvar,
+                  "difference_ci95": list(cm.tconfint_diff(usevar="pooled"))}
+    lv = stats.levene(a, b, center="mean")
+    levene_row = {"F": lv.statistic, "p": lv.pvalue, "df1": 1, "df2": used-2, "center": "mean",
+                  "valid": bool(np.isfinite(lv.statistic) and np.isfinite(lv.pvalue))}
     return {"action": "ttest_independent_welch", "outcome": yname, "group": gname, "groups": summaries,
             "mean_difference_first_minus_second": diff, "difference_ci95": list(ci), "t": float(test.statistic),
             "df_welch": float(dfw), "p_two_sided": float(test.pvalue),
+            "standard_error_welch": se, "pooled_variance": pooled_row, "levene": levene_row,
             "cohens_d_pooled_sd_descriptive": float(diff/pooled) if pooled else None,
             "data_audit": make_audit(len(df), used, y_excl + [
                 missing_exclusion(df, gname),
@@ -289,13 +305,18 @@ def anova(df, cfg):
     if not gname:
         raise ValueError("anova requires group")
     require_columns(df, [gname])
+    policy = cfg.get("singleton_policy", "drop")
+    if policy not in ("drop", "retain", "error"):
+        raise ValueError("singleton_policy must be drop, retain or error")
     groups = []
     summaries = []
     dropped_groups = []
     grouped = pd.DataFrame({"group": df[gname], "outcome": y})
     for label, subset in grouped.groupby("group", observed=True, dropna=True):
         vals = subset["outcome"].dropna().astype(float)
-        if len(vals) >= 2:
+        if len(vals) == 1 and policy == "error":
+            raise ValueError(f"Singleton group {label!r}; select retain or drop explicitly")
+        if len(vals) >= 2 or (len(vals) == 1 and policy == "retain"):
             groups.append(vals)
             summaries.append({"group": clean(label), "n": int(len(vals)), "mean": float(vals.mean()), "sd": float(vals.std(ddof=1))})
         else:
@@ -304,7 +325,7 @@ def anova(df, cfg):
     if len(groups) < 2:
         extra = f" Dropped groups: {dropped_groups}." if dropped_groups else ""
         raise ValueError(f"ANOVA needs at least two groups with two observations each.{extra}")
-    if all(g.var(ddof=1) == 0 for g in groups):
+    if sum(len(g)-1 for g in groups) <= 0 or all(len(g) == 1 or g.var(ddof=1) == 0 for g in groups):
         return invalid_result("one_way_anova", "All groups have zero within-group variance; F inference is undefined",
                               groups=summaries, data_audit=make_audit(len(df), sum(map(len, groups)), y_excl + [missing_exclusion(df, gname)] + dropped_groups + [
                                   {"reason": "row dropped: missing outcome or group", "count": len(df)-sum(map(len, groups))-sum(g["usable_n"] for g in dropped_groups)}
@@ -319,7 +340,8 @@ def anova(df, cfg):
             "n": int(n), "F": float(f), "df_between": int(k-1), "df_within": int(n-k),
             "p": float(p), "eta_squared": float(ss_between/ss_total) if ss_total else None,
             "sum_of_squares": {"between": float(ss_between), "within": float(ss_total - ss_between), "total": ss_total},
-            "note": "Classical one-way ANOVA; equal-variance robustness not assessed by this helper.",
+            "singleton_policy": policy,
+            "note": "Classical one-way ANOVA. Legacy default drops singleton groups; retain is recommended when they belong to the design. No automatic equal-variance decision.",
             "data_audit": make_audit(len(df), n, y_excl + [missing_exclusion(df, gname)] + dropped_groups + [
                 {"reason": "row dropped: missing outcome or group",
                  "count": int(len(df) - n - sum(g["usable_n"] for g in dropped_groups))}
@@ -511,6 +533,33 @@ def run_request(cfg, df=None):
     elif action == "anova": result = anova(df, cfg)
     elif action == "correlation": result = correlation(df, cfg)
     elif action == "regression": result = regression(df, cfg)
+    elif action in ("mann_whitney", "wilcoxon", "kruskal_wallis"):
+        from procedures import nonparametric
+        result = nonparametric(df, cfg)
+    elif action == "fisher_exact":
+        from procedures import fisher
+        result = fisher(df, cfg)
+    elif action == "welch_anova":
+        from procedures import welch_anova
+        result = welch_anova(df, cfg)
+    elif action in ("tukey", "games_howell"):
+        from procedures import posthoc
+        result = posthoc(df, cfg)
+    elif action in ("anova_two_way", "ancova"):
+        from advanced import factorial
+        result = factorial(df, cfg)
+    elif action == "anova_repeated":
+        from advanced import repeated
+        result = repeated(df, cfg)
+    elif action == "pca":
+        from advanced import pca
+        result = pca(df, cfg)
+    elif action == "prepare":
+        from preparation import prepare_result
+        result = prepare_result(df, cfg)
+    elif action == "levene":
+        from procedures import levene
+        result = levene(df, cfg)
     elif action == "alpha": result = alpha(df, cfg.get("variables", []))
     else: raise ValueError(f"Unknown action {action!r}")
     result.setdefault("valid", True)
@@ -518,7 +567,7 @@ def run_request(cfg, df=None):
     result["source_rows"] = int(len(df))
     result["source_columns"] = int(len(df.columns))
     result["software"] = {"python": sys.version.split()[0], "pandas": pd.__version__, "numpy": np.__version__, "scipy": __import__("scipy").__version__}
-    for package in ("statsmodels", "pyreadstat"):
+    for package in ("statsmodels", "pyreadstat", "sklearn", "pingouin"):
         try:
             result["software"][package] = __import__(package).__version__
         except ImportError:

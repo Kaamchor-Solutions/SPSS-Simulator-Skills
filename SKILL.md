@@ -7,6 +7,41 @@ description: Simulate an SPSS-style statistical analysis workflow for uploaded E
 
 Act as a careful, reproducible statistical analyst that emulates common SPSS workflows and output conventions. Never claim to be IBM SPSS, to have connected to a data source that is not available, or to have run a calculation that was not actually computed. Prefer actual execution through an available Python/R/code interpreter or the bundled `scripts/analyze.py`; use a target platform's file connector only when it is available and authorized. An LLM without file/code access can still guide the workflow, draft syntax, and interpret user-provided output, but must not invent results.
 
+## On-demand procedure protocols
+
+Read only the relevant relative protocol file before selecting, computing or interpreting a procedure. These are referenced protocols, not registered slash commands.
+
+| Need | Protocol |
+|---|---|
+| data-audit | [protocols/data-audit.md](protocols/data-audit.md) |
+| data-preparation | [protocols/data-preparation.md](protocols/data-preparation.md) |
+| descriptives | [protocols/descriptives.md](protocols/descriptives.md) |
+| frequencies | [protocols/frequencies.md](protocols/frequencies.md) |
+| crosstabs | [protocols/crosstabs.md](protocols/crosstabs.md) |
+| ttest-independent | [protocols/ttest-independent.md](protocols/ttest-independent.md) |
+| ttest-paired | [protocols/ttest-paired.md](protocols/ttest-paired.md) |
+| levene | [protocols/levene.md](protocols/levene.md) |
+| anova-oneway | [protocols/anova-oneway.md](protocols/anova-oneway.md) |
+| correlation | [protocols/correlation.md](protocols/correlation.md) |
+| regression-linear | [protocols/regression-linear.md](protocols/regression-linear.md) |
+| regression-logistic | [protocols/regression-logistic.md](protocols/regression-logistic.md) |
+| reliability-alpha | [protocols/reliability-alpha.md](protocols/reliability-alpha.md) |
+| validation-and-parity | [protocols/validation-and-parity.md](protocols/validation-and-parity.md) |
+| reporting | [protocols/reporting.md](protocols/reporting.md) |
+
+| mann-whitney | [protocols/mann-whitney.md](protocols/mann-whitney.md) |
+| wilcoxon | [protocols/wilcoxon.md](protocols/wilcoxon.md) |
+| kruskal-wallis | [protocols/kruskal-wallis.md](protocols/kruskal-wallis.md) |
+| fisher-exact | [protocols/fisher-exact.md](protocols/fisher-exact.md) |
+| welch-anova | [protocols/welch-anova.md](protocols/welch-anova.md) |
+| posthoc-tukey | [protocols/posthoc-tukey.md](protocols/posthoc-tukey.md) |
+| posthoc-games-howell | [protocols/posthoc-games-howell.md](protocols/posthoc-games-howell.md) |
+
+| anova-two-way | [protocols/anova-two-way.md](protocols/anova-two-way.md) |
+| ancova | [protocols/ancova.md](protocols/ancova.md) |
+| anova-repeated | [protocols/anova-repeated.md](protocols/anova-repeated.md) |
+| pca | [protocols/pca.md](protocols/pca.md) |
+
 ## First response and intake
 
 When the user invokes the skill without a dataset or a defined task, warmly start the project and ask them to:
@@ -60,7 +95,7 @@ The helper has three presentation layers on top of the unchanged JSON contract. 
 Rules when driving these layers:
 
 - Respect `valid: false`. The tables print "RESULT INVALID" and the reason; report that, never a substitute number.
-- Quote the **Note**/footnote lines. They say which SPSS rows are not computed (Levene, pooled-variance t, post hoc, Fisher), so do not claim them.
+- Quote the **Note**/footnote lines. They identify procedure limitations. Levene/pooled t are included for independent t; Fisher and post hoc procedures are separate explicit actions, never implied by a crosstab or ANOVA.
 - Interpretation sentences are generated from the numbers. Keep their hedging: association not causation, significance is not importance, exploratory when many tests.
 - The tables follow SPSS layout, not SPSS's every digit: percentile method, rounding and defaults can differ. Say "SPSS-style", never "SPSS output".
 - Show the user the report file or the tables; do not paste raw JSON unless asked. Keep the exact commands/request so the analysis can be re-run.

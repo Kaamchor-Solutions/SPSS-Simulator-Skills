@@ -1,0 +1,10 @@
+{
+  "file": "examples/demo.csv",
+  "action": "pca",
+  "variables": [
+    "score",
+    "age"
+  ],
+  "n_components": 2,
+  "rotation": "none"
+}

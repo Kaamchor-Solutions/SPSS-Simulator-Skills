@@ -1,0 +1,7 @@
+{
+  "file": "examples/demo-paired.csv",
+  "action": "wilcoxon",
+  "outcome": "after",
+  "paired_with": "before",
+  "method": "asymptotic"
+}

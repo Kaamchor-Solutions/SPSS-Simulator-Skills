@@ -1,0 +1,6 @@
+{
+  "file": "examples/demo.csv",
+  "action": "games_howell",
+  "outcome": "score",
+  "group": "group"
+}

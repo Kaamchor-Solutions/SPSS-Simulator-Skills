@@ -14,9 +14,9 @@ Keep the LLM in an analyst/orchestration role and delegate numeric computation t
 | `crosstab` | Counts, row/column percentages, Pearson chi-square, expected-cell counts, Cramér’s V | Uses asymptotic Pearson chi-square, not Fisher exact; account for sparse cells and sampling design |
 | `ttest` independent | Welch two-sample t-test, group summaries, mean difference, CI, descriptive pooled-SD Cohen’s d | Independent observations; no robust bootstrap, equivalence test, or multiple-comparison correction |
 | `ttest` paired | Paired t-test, mean paired change and CI, Cohen’s dz | Requires valid one-to-one pairing and a defensible distribution of paired differences |
-| `anova` | Classical one-way F test, group summaries, eta-squared | No Welch ANOVA, post-hoc test, planned contrasts, or assumption diagnostic |
+| `anova` | Classical one-way F test, group summaries, eta-squared | Welch/post hoc are separate explicit actions; no planned contrasts |
 | `correlation` | Pairwise Pearson or Spearman coefficient and p-value | No confidence interval, partial correlation, multiplicity adjustment, or missingness model |
-| `regression` linear | OLS coefficients, classical SE/CI/p, model F, R² and adjusted R² | Numeric predictors only; no categorical factor expansion, robust/clustered errors, diagnostics, weights, or imputation |
+| `regression` linear | OLS coefficients, classical SE/CI/p, model F, R² and adjusted R² | Numeric design predictors, including explicit prepare-generated dummies; no implicit factor expansion, robust/clustered errors, diagnostics, weights, or imputation |
 | `regression` logistic | Binary logit, coefficients, OR/CI, Wald p, McFadden pseudo-R² and LR p | Numeric predictors only; event must be 1; separation/calibration and model specification need review |
 | `alpha` | Cronbach’s alpha on listwise-complete numeric item rows | Reverse-keying is not automatic; no item-total/alpha-if-deleted output or validity claim |
 
@@ -34,7 +34,7 @@ Keep the LLM in an analyst/orchestration role and delegate numeric computation t
 
 Review independence, sampling design, outcome/predictor measurement, functional form, residual behavior, influential cases, sparse tables, model convergence/separation, and the intended estimand. Normality-test p-values alone should not dictate procedure choice. Treat p-values as one component of evidence, report effect sizes and uncertainty, and disclose multiple-testing decisions. Association does not establish causation.
 
-For complex survey designs, clustered/repeated observations, survival/time-to-event, count outcomes, robust inference, multiple imputation, equivalence/non-inferiority, Bayesian analysis, or advanced post-hoc procedures, use suitable validated software and explicitly name it. Do not use this helper as if those features were implemented.
+For complex survey designs, clustered or mixed repeated observations beyond one within factor, survival/time-to-event, count outcomes, robust inference, multiple imputation, equivalence/non-inferiority, Bayesian analysis, or post-hoc procedures outside Tukey/Games-Howell, use suitable validated software and explicitly name it. Do not use this helper as if those features were implemented.
 
 ## SPSS comparison
 
@@ -54,4 +54,12 @@ Audit counts are overlapping reason/variable incidences, not a disjoint partitio
 
 ## Formatted output scope
 
-The tables imitate SPSS layout and naming, not every SPSS option. Not computed: Levene's test and the pooled-variance t row, post hoc tests, Fisher exact and likelihood-ratio chi-square rows, collinearity and Durbin-Watson statistics, Hosmer-Lemeshow. Percentiles use linear interpolation (SPSS defaults to weighted average), so quartiles can differ slightly. ANOVA sums of squares, the regression ANOVA table, Wald statistics and standard errors of differences are exact arithmetic on the computed results. Report interpretation text is generated from the numbers and is deliberately association-only; review it against the study design.
+The tables imitate SPSS layout and naming, not every SPSS option. Levene/pooled rows are included with independent t; Tukey/Games-Howell and Fisher are separate explicit actions. Not computed: likelihood-ratio chi-square rows, collinearity and Durbin-Watson statistics, Hosmer-Lemeshow. Percentiles use linear interpolation (SPSS defaults to weighted average), so quartiles can differ slightly. ANOVA sums of squares, the regression ANOVA table, Wald statistics and standard errors of differences are exact arithmetic on the computed results. Report interpretation text is generated from the numbers and is deliberately association-only; review it against the study design.
+
+## Added rank, exact and robust procedures
+Read protocols/mann-whitney.md through protocols/posthoc-games-howell.md for exact defaults. Rank methods default to asymptotic, two-sided, continuity-corrected inference where applicable; exact tied/zero cases fail rather than silently changing methods. Kruskal-Wallis uses asymptotic chi-square. Fisher uses probability ordering. Post hoc alpha=.05, multiplicity within the requested family, not across separate calls. Requires scipy>=1.15, statsmodels>=0.15 (Games-Howell support). No assumption-test-driven automatic row selection.
+
+## Advanced procedures and boundaries
+Two-way ANOVA defaults to a full factorial with Type III SS and sum contrasts. ANCOVA defaults to additive factors plus common slopes; neither silently changes the design. Type II is available explicitly; empty/aliased designs fail. One-factor repeated ANOVA uses complete subjects and provides Mauchly/GG/HF; it is not mixed-model support. PCA uses full SVD on the correlation (sample SD) or covariance matrix; varimax has no Kaiser normalization. PCA is not factor analysis, and no common-factor extraction is provided.
+
+Only the published Duncan one-way ANOVA fixture currently verifies SPSS omnibus SS/df/F within published rounding. Other procedures are library-tested, not SPSS-parity-verified. No licensed SPSS was run. Read tests/fixtures/parity.json and protocols for exact limitations.

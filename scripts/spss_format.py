@@ -249,14 +249,17 @@ def _ttest_ind(res):
     tabs = [Table("Group Statistics", [res["group"], "N", "Mean", "Std. Deviation", "Std. Error Mean"], rows,
                   [f"Dependent variable: {res['outcome']}."])]
     diff, t = res["mean_difference_first_minus_second"], res["t"]
-    se = abs(diff / t) if t else None
+    se = res.get("standard_error_welch", abs(diff / t) if t else None)
     ci = res["difference_ci95"]
-    tabs.append(Table("Independent Samples Test",
-                      ["", "t", "df", "Sig. (2-tailed)", "Mean Difference", "Std. Error Difference", "95% CI Lower", "95% CI Upper"],
-                      [["Equal variances not assumed (Welch)", fnum(t), fnum(res["df_welch"]), fsig(res["p_two_sided"]), fnum(diff),
-                        fnum(se), fnum(ci[0]), fnum(ci[1])]],
-                      [f"Mean difference = mean({_label(g[0]['group'])}) - mean({_label(g[1]['group'])}).",
-                       "Levene's test and the pooled-variance row are not computed by this helper; Welch is reported as the robust default."]))
+    rows = [["Equal variances not assumed (Welch)", fnum(t), fnum(res["df_welch"]), fsig(res["p_two_sided"]), fnum(diff), fnum(se), fnum(ci[0]), fnum(ci[1])]]
+    if res.get("pooled_variance"):
+        v=res["pooled_variance"]; c=v["difference_ci95"]
+        rows.insert(0,["Equal variances assumed", fnum(v["t"]), fnum(v["df"]), fsig(v["p_two_sided"]), fnum(diff), fnum(v["standard_error"]), fnum(c[0]), fnum(c[1])])
+    tabs.append(Table("Independent Samples Test", ["", "t", "df", "Sig. (2-tailed)", "Mean Difference", "Std. Error Difference", "95% CI Lower", "95% CI Upper"], rows,
+                      [f"Mean difference = mean({_label(g[0]['group'])}) - mean({_label(g[1]['group'])}).", "Welch is the robust default; do not select a row solely from a Levene p-value."]))
+    if res.get("levene"):
+        v=res["levene"]
+        tabs.append(Table("Levene's Test for Equality of Variances", ["Center","F","df1","df2","Sig."], [[v["center"],fnum(v["F"]),v["df1"],v["df2"],fsig(v["p"])]], [] if v["valid"] else ["Levene inference undefined: deviations have zero residual variance."]))
     tabs.append(Table("Independent Samples Effect Size", ["", "Point Estimate"],
                       [["Cohen's d (pooled SD, descriptive)", fnum(res.get("cohens_d_pooled_sd_descriptive"))]]))
     return tabs
@@ -427,7 +430,7 @@ def build_tables(res):
     if res.get("valid") is False:
         warnings.append(f"RESULT INVALID: {res.get('reason', 'inference not defined')}. No inferential statistics are reported.")
         tables = []
-        if res.get("groups"):
+        if res.get("groups") and isinstance(res["groups"][0], dict):
             tables.append(Table("Group Statistics", ["Group", "N", "Mean", "Std. Deviation"],
                                 [[_label(g["group"]), g["n"], fnum(g["mean"]), fnum(g["sd"])] for g in res["groups"]]))
         for w in res.get("warnings", []):
@@ -440,13 +443,36 @@ def build_tables(res):
         for p in res.get("pairs", []):
             if p.get("valid") is False:
                 warnings.append(f"Pair {p['var1']} x {p['var2']}: {p.get('reason', 'correlation undefined')}.")
-    builder = BUILDERS.get(action)
+    builder = BUILDERS.get(action, _extended)
     if builder is None:
         raise ValueError(f"No formatter for action {action!r}")
     tables = builder(res)
     for w in res.get("warnings", []) or []:
         warnings.append(str(w))
     return title, tables, warnings
+
+
+def _extended(res):
+    if res["action"] == "prepare":
+        return [Table("Transformation audit", ["Kind","Source","Target / reference","Matched","Unmatched"], [[t["kind"],t["source"],t.get("target",t.get("reference")),t.get("matched"),t.get("unmatched_nonmissing")] for t in res["transformations"]], ["Source columns preserved. Raw records are not displayed in reports."])]
+    if res["action"] == "levene":
+        return [Table("Test of Homogeneity of Variances", ["Center","F","df1","df2","Sig."], [[res["center"],fnum(res["F"]),res["df1"],res["df2"],fsig(res["p"])]])]
+    if res["action"] in ("mann_whitney","wilcoxon","kruskal_wallis","fisher_exact"):
+        return [Table("Test Statistics", ["Procedure","N","Statistic / Odds ratio","df","Sig. (2-sided)","Method"], [[res["action"],res["n"],fnum(res.get("statistic",res.get("odds_ratio"))),res.get("df"),fsig(res["p"]),res["method"]]])]
+    if res["action"] == "welch_anova":
+        return [Table("Robust Tests of Equality of Means", ["","F","df1","df2","Sig."], [["Welch",fnum(res["F"]),fnum(res["df1"]),fnum(res["df2"]),fsig(res["p"])]])]
+    if res["action"] in ("tukey","games_howell"):
+        return [Table("Multiple Comparisons: " + res["action"], ["First","Second","Difference (second-first)","Sig. adjusted","CI Lower","CI Upper"], [[p["first"],p["second"],fnum(p["difference_second_minus_first"]),fsig(p["p_adjusted"]),fnum(p["ci95"][0]),fnum(p["ci95"][1])] for p in res["comparisons"]])]
+    if res["action"] in ("anova_two_way","ancova"):
+        return [Table("Tests of Between-Subjects Effects", ["Source","Type " + str(res["ss_type"]) + " SS","df","F","Sig."], [[r["term"],fnum(r["sum_sq"]),fnum(r["df"]),fnum(r["F"]),fsig(r["p"])] for r in res["terms"]], ["Sum-to-zero contrasts; listwise complete cases."])]
+    if res["action"] == "anova_repeated":
+        rows=[["Sphericity assumed",1,fnum(res["F"]),fnum(res["df1"]),fnum(res["df2"]),fsig(res["p"])]]
+        rows += [[name,fnum(c["epsilon"]),fnum(res["F"]),fnum(c["df1"]),fnum(c["df2"]),fsig(c["p"])] for name,c in res["corrections"].items() if c["valid"]]
+        v=res["sphericity"]
+        return [Table("Tests of Within-Subjects Effects",["Correction","Epsilon","F","df1","df2","Sig."],rows),Table("Mauchly's Test of Sphericity",["W","Chi-square","df","Sig."],[[fnum(v["W"]),fnum(v["chi_square"]),v["df"],fsig(v["p"])]],[] if v["valid"] else ["Sphericity diagnostic undefined; not evidence it passed."])]
+    if res["action"] == "pca":
+        return [Table("Total Variance Explained (retained components)",["Component","Eigenvalue","Percent"],[[i+1,fnum(v),fpct(res["explained_variance_ratio"][i]*100)] for i,v in enumerate(res["eigenvalues"])]),Table("Component Matrix: " + res["rotation"],["Variable"]+[str(i+1) for i in range(res["n_components"])]+["Communality"],[[v]+[fnum(x) for x in res["loadings"][i]]+[fnum(res["communalities"][i])] for i,v in enumerate(res["variables"])])]
+    raise ValueError(f"No formatter for action {res['action']!r}")
 
 
 def format_result(res, style="text"):

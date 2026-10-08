@@ -67,3 +67,11 @@ Variable selections must be non-empty lists of distinct column names. Crosstab v
 Inspect `valid` before interpretation. Undefined inference (constant correlation, zero-variance differences/groups/item totals, insufficient crosstab categories) returns `valid: false`, a reason, and no usable test result. Correlation also marks invalid pairs individually. Logistic fits report convergence and are invalid when nonconvergent or separation warnings occur; numerical exceptions exit nonzero. JSON output does not by itself mean valid inference.
 
 Audit counts are overlapping reason/variable incidences, not a disjoint partition. Do not sum exclusions to derive dropped rows. Use `rows_total - rows_used` for a procedure's unique dropped-row total; correlation instead reports each pair's N and dropped count and sets overall `rows_used` to null. ANOVA dropped-group `count` is the group's original row count; `usable_n` is its numeric, nonmissing outcome count. Describe and frequencies have per-variable missing counts rather than `data_audit`.
+
+## Extended actions
+
+Read the matching `protocols/` file for design limits and output contracts. Existing JSON fields are unchanged; new t fields are additive. New actions: prepare, levene, mann_whitney, wilcoxon, kruskal_wallis, fisher_exact, welch_anova, tukey, games_howell, anova_two_way, ancova, anova_repeated, pca.
+
+Recode/range/dummy rules are deterministic and opt-in, create new columns and never overwrite source. `prepare` returns records plus transformation audit; save derived records to a new file before modeling. Explicit dummy design columns work in linear/logistic regression.
+
+Run `python -m pytest -v` after installing requirements and pytest; unittest discovery alone omits the extension fixtures. Dependency floors are scipy 1.15, statsmodels 0.15, pingouin 0.6 and scikit-learn 1.6. Current tested environment is recorded in generated result software fields.

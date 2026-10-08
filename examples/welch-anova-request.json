@@ -1,0 +1,6 @@
+{
+  "file": "examples/demo.csv",
+  "action": "welch_anova",
+  "outcome": "score",
+  "group": "group"
+}

@@ -376,7 +376,7 @@ class SyntaxTests(unittest.TestCase):
     def test_syntax_for_each_example_names_the_variables(self):
         wanted = {"describe-request.json": "DESCRIPTIVES VARIABLES=score age", "frequencies-request.json": "FREQUENCIES VARIABLES=group",
                   "crosstab-request.json": "CROSSTABS /TABLES=group BY event", "ttest-request.json": "T-TEST GROUPS=group(control active) /VARIABLES=score",
-                  "ttest-paired-request.json": "T-TEST PAIRS=before WITH after (PAIRED)", "anova-request.json": "ONEWAY score BY group",
+                  "ttest-paired-request.json": "T-TEST PAIRS=after WITH before (PAIRED)", "anova-request.json": "ONEWAY score BY group",
                   "correlation-request.json": "CORRELATIONS /VARIABLES=age score", "regression-linear-request.json": "/DEPENDENT score",
                   "regression-logistic-request.json": "LOGISTIC REGRESSION VARIABLES=event", "alpha-request.json": "RELIABILITY /VARIABLES=item1 item2 item3"}
         for name, fragment in wanted.items():

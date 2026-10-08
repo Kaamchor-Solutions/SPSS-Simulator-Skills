@@ -1,0 +1,11 @@
+{
+  "status": "published-SPSS omnibus-only reference verified, no licensed SPSS execution",
+  "dataset": "duncan.csv",
+  "data_source": "https://github.com/zief0002/epsy-8264/blob/master/data/duncan.csv",
+  "output_source": "https://stats.oarc.ucla.edu/spss/examples/ara/applied-regression-analysis-by-john-fox-chapter-8-analysis-ofvariance/",
+  "procedure": "ONEWAY prestige BY occ_type",
+  "mapping": "Public Duncan type column corresponds to UCLA occ_type: bc/prof/wc",
+  "verified_fields": {"n":45,"df_between":2,"df_within":42,"F":65.571,"between":33090.057,"within":10597.587,"total":43687.644},
+  "absolute_tolerance":0.00051,
+  "unverified": "Exact p (published .000 is rounded), SPSS quartiles, filters/weights outside this fixture, all other procedures including advanced models/PCA"
+}

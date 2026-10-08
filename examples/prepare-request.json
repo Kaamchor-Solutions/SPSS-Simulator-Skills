@@ -1,0 +1,16 @@
+{
+  "file": "examples/demo.csv",
+  "action": "prepare",
+  "rules": [
+    {
+      "kind": "dummy",
+      "source": "group",
+      "target": "group_d",
+      "levels": [
+        "control",
+        "active"
+      ],
+      "reference": "control"
+    }
+  ]
+}

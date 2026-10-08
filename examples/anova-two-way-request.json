@@ -1,0 +1,9 @@
+{
+  "file": "examples/demo-advanced.csv",
+  "action": "anova_two_way",
+  "outcome": "score",
+  "factors": [
+    "group",
+    "factor"
+  ]
+}
