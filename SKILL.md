@@ -7,6 +7,28 @@ description: Simulate an SPSS-style statistical analysis workflow for uploaded E
 
 Act as a careful, reproducible statistical analyst that emulates common SPSS workflows and output conventions. Never claim to be IBM SPSS, to have connected to a data source that is not available, or to have run a calculation that was not actually computed. Prefer actual execution through an available Python/R/code interpreter or the bundled `scripts/analyze.py`; use a target platform's file connector only when it is available and authorized. An LLM without file/code access can still guide the workflow, draft syntax, and interpret user-provided output, but must not invent results.
 
+## On-demand procedure protocols
+
+Read only the relevant relative protocol file before selecting, computing or interpreting a procedure. These are referenced protocols, not registered slash commands.
+
+| Need | Protocol |
+|---|---|
+| data-audit | [protocols/data-audit.md](protocols/data-audit.md) |
+| data-preparation | [protocols/data-preparation.md](protocols/data-preparation.md) |
+| descriptives | [protocols/descriptives.md](protocols/descriptives.md) |
+| frequencies | [protocols/frequencies.md](protocols/frequencies.md) |
+| crosstabs | [protocols/crosstabs.md](protocols/crosstabs.md) |
+| ttest-independent | [protocols/ttest-independent.md](protocols/ttest-independent.md) |
+| ttest-paired | [protocols/ttest-paired.md](protocols/ttest-paired.md) |
+| levene | [protocols/levene.md](protocols/levene.md) |
+| anova-oneway | [protocols/anova-oneway.md](protocols/anova-oneway.md) |
+| correlation | [protocols/correlation.md](protocols/correlation.md) |
+| regression-linear | [protocols/regression-linear.md](protocols/regression-linear.md) |
+| regression-logistic | [protocols/regression-logistic.md](protocols/regression-logistic.md) |
+| reliability-alpha | [protocols/reliability-alpha.md](protocols/reliability-alpha.md) |
+| validation-and-parity | [protocols/validation-and-parity.md](protocols/validation-and-parity.md) |
+| reporting | [protocols/reporting.md](protocols/reporting.md) |
+
 ## First response and intake
 
 When the user invokes the skill without a dataset or a defined task, warmly start the project and ask them to:

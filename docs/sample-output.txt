@@ -150,7 +150,7 @@ Homogeneity of variance (Levene) and post hoc tests are not computed by this hel
 Data audit:
 - Rows read: 12; rows used: 12
 
-Note: Classical one-way ANOVA; equal-variance robustness not assessed by this helper.
+Note: Classical one-way ANOVA. Legacy default drops singleton groups; retain is recommended when they belong to the design. No automatic equal-variance decision.
 
 
 ##### examples/correlation-request.json #####

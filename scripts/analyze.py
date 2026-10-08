@@ -150,7 +150,8 @@ def describe(df, variables):
             x = numeric.dropna()
             row = {"variable": name, "type": "numeric", "n": int(x.size), "missing_n": int(s.isna().sum()),
                    "mean": x.mean(), "sd_sample": x.std(ddof=1), "median": x.median(),
-                   "q1": x.quantile(.25), "q3": x.quantile(.75), "min": x.min(), "max": x.max(),
+                   "percentile_estimator": "linear interpolation, Hyndman-Fan type 7",
+                   "q1": x.quantile(.25, interpolation="linear"), "q3": x.quantile(.75, interpolation="linear"), "min": x.min(), "max": x.max(),
                    "skew": x.skew() if x.size >= 3 else None}
         else:
             counts = s.value_counts(dropna=True)
@@ -250,6 +251,11 @@ def ttest(df, cfg):
         groups = list(pd.unique(df[gname].dropna()))
     if len(groups) != 2 or groups[0] == groups[1]:
         raise ValueError(f"Independent t-test requires exactly two distinct groups; found {groups}")
+    observed = list(pd.unique(df[gname].dropna()))
+    unmatched = [g for g in groups if not df[gname].eq(g).any()]
+    if unmatched:
+        typed = [{"value": clean(g), "type": type(g).__name__} for g in observed]
+        raise ValueError(f"Unmatched group labels {unmatched!r}; observed values/types: {typed!r}. Labels must match storage types; no implicit coercion.")
     vals = []
     summaries = []
     for group in groups:
@@ -289,13 +295,18 @@ def anova(df, cfg):
     if not gname:
         raise ValueError("anova requires group")
     require_columns(df, [gname])
+    policy = cfg.get("singleton_policy", "drop")
+    if policy not in ("drop", "retain", "error"):
+        raise ValueError("singleton_policy must be drop, retain or error")
     groups = []
     summaries = []
     dropped_groups = []
     grouped = pd.DataFrame({"group": df[gname], "outcome": y})
     for label, subset in grouped.groupby("group", observed=True, dropna=True):
         vals = subset["outcome"].dropna().astype(float)
-        if len(vals) >= 2:
+        if len(vals) == 1 and policy == "error":
+            raise ValueError(f"Singleton group {label!r}; select retain or drop explicitly")
+        if len(vals) >= 2 or (len(vals) == 1 and policy == "retain"):
             groups.append(vals)
             summaries.append({"group": clean(label), "n": int(len(vals)), "mean": float(vals.mean()), "sd": float(vals.std(ddof=1))})
         else:
@@ -304,7 +315,7 @@ def anova(df, cfg):
     if len(groups) < 2:
         extra = f" Dropped groups: {dropped_groups}." if dropped_groups else ""
         raise ValueError(f"ANOVA needs at least two groups with two observations each.{extra}")
-    if all(g.var(ddof=1) == 0 for g in groups):
+    if sum(len(g)-1 for g in groups) <= 0 or all(len(g) == 1 or g.var(ddof=1) == 0 for g in groups):
         return invalid_result("one_way_anova", "All groups have zero within-group variance; F inference is undefined",
                               groups=summaries, data_audit=make_audit(len(df), sum(map(len, groups)), y_excl + [missing_exclusion(df, gname)] + dropped_groups + [
                                   {"reason": "row dropped: missing outcome or group", "count": len(df)-sum(map(len, groups))-sum(g["usable_n"] for g in dropped_groups)}
@@ -319,7 +330,8 @@ def anova(df, cfg):
             "n": int(n), "F": float(f), "df_between": int(k-1), "df_within": int(n-k),
             "p": float(p), "eta_squared": float(ss_between/ss_total) if ss_total else None,
             "sum_of_squares": {"between": float(ss_between), "within": float(ss_total - ss_between), "total": ss_total},
-            "note": "Classical one-way ANOVA; equal-variance robustness not assessed by this helper.",
+            "singleton_policy": policy,
+            "note": "Classical one-way ANOVA. Legacy default drops singleton groups; retain is recommended when they belong to the design. No automatic equal-variance decision.",
             "data_audit": make_audit(len(df), n, y_excl + [missing_exclusion(df, gname)] + dropped_groups + [
                 {"reason": "row dropped: missing outcome or group",
                  "count": int(len(df) - n - sum(g["usable_n"] for g in dropped_groups))}

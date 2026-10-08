@@ -41,7 +41,7 @@ def histogram_data(values, bins=None):
 
 
 def boxplot_stats(values):
-    """Tukey box statistics as SPSS draws them: hinges at quartiles, whiskers to last point within 1.5 IQR, outliers beyond."""
+    """Matplotlib box statistics (linear-interpolated quartiles, not SPSS Tukey hinges): quartiles, whiskers to last point within 1.5 IQR, outliers beyond."""
     x = np.sort(np.asarray(pd.to_numeric(pd.Series(values), errors="coerce").dropna(), dtype=float))
     if x.size == 0:
         raise ValueError("No numeric values to plot")

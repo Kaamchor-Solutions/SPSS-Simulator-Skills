@@ -155,7 +155,7 @@ def spss_syntax(cfg, res):
         return f"CROSSTABS /TABLES={cfg.get('row')} BY {cfg.get('column')} /STATISTICS=CHISQ PHI /CELLS=COUNT ROW COLUMN."
     if a == "ttest":
         if cfg.get("paired_with"):
-            return f"T-TEST PAIRS={cfg['paired_with']} WITH {cfg['outcome']} (PAIRED) /CRITERIA=CI(.95)."
+            return f"T-TEST PAIRS={cfg['outcome']} WITH {cfg['paired_with']} (PAIRED) /CRITERIA=CI(.95)."
         g = cfg.get("groups") or [x["group"] for x in res.get("groups", [])]
         codes = " ".join(str(x) for x in g)
         return (f"T-TEST GROUPS={cfg.get('group')}({codes}) /VARIABLES={cfg['outcome']} /CRITERIA=CI(.95).\n"
