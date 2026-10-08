@@ -346,7 +346,7 @@ def markdown_to_html(md, title, images_b64):
         i += 1
     css = ("body{font-family:Segoe UI,Arial,sans-serif;max-width:900px;margin:2em auto;padding:0 1em;color:#222}"
            "table{border-collapse:collapse;margin:.6em 0;font-size:.9em}th,td{border:1px solid #bbb;padding:3px 9px}"
-           "th{background:#e8edf3}pre{background:#f5f5f5;padding:.8em;overflow-x:auto}blockquote{border-left:4px solid #c33;margin:.5em 0;padding:.2em .8em;background:#fdf0f0}"
+           "th{background:#e8edf3}pre{background:#f5f5f5;padding:.8em;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}blockquote{border-left:4px solid #c33;margin:.5em 0;padding:.2em .8em;background:#fdf0f0}"
            "h2{border-bottom:1px solid #ccc;padding-bottom:.2em}table,tr{page-break-inside:avoid}h2,h3{page-break-after:avoid}")
     return f"<!doctype html><html><head><meta charset='utf-8'><title>{html.escape(title)}</title><style>{css}</style></head><body>\n" + "\n".join(out) + "\n</body></html>\n"
 
