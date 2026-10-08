@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Add on-demand protocols and routing for all existing/new procedures.
+- Fix t-test typed-label diagnostics and paired SPSS syntax sign; document Type 7 quartiles.
+- Preserve default singleton dropping for compatibility; add explicit retain/error policy.
+- Add Levene, pooled t, source-preserving recode/range/dummy preparation.
+- Add rank/Fisher tests, Welch ANOVA and Tukey/Games-Howell pairwise inference.
+- Add restricted two-way/ANCOVA, one-factor repeated ANOVA with GG/HF, and PCA/varimax.
+- Add noisy library/invalid fixtures and a published-SPSS Duncan omnibus reference.
+- CI runs pytest; no licensed-SPSS or whole-procedure parity claim.
+
+
 ## Formatted output layer
 
 - `--format text|markdown` on `scripts/analyze.py` prints SPSS-style tables for every procedure; default JSON output is unchanged.

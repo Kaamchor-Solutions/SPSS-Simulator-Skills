@@ -545,6 +545,15 @@ def run_request(cfg, df=None):
     elif action in ("tukey", "games_howell"):
         from procedures import posthoc
         result = posthoc(df, cfg)
+    elif action in ("anova_two_way", "ancova"):
+        from advanced import factorial
+        result = factorial(df, cfg)
+    elif action == "anova_repeated":
+        from advanced import repeated
+        result = repeated(df, cfg)
+    elif action == "pca":
+        from advanced import pca
+        result = pca(df, cfg)
     elif action == "prepare":
         from preparation import prepare_result
         result = prepare_result(df, cfg)
@@ -558,7 +567,7 @@ def run_request(cfg, df=None):
     result["source_rows"] = int(len(df))
     result["source_columns"] = int(len(df.columns))
     result["software"] = {"python": sys.version.split()[0], "pandas": pd.__version__, "numpy": np.__version__, "scipy": __import__("scipy").__version__}
-    for package in ("statsmodels", "pyreadstat"):
+    for package in ("statsmodels", "pyreadstat", "sklearn", "pingouin"):
         try:
             result["software"][package] = __import__(package).__version__
         except ImportError:

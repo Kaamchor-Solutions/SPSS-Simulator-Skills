@@ -135,6 +135,12 @@ def interpret(res):
         return [f"Mean-centered Levene F({res['df1']}, {res['df2']}) = {_n(res['F'])}, {apa_p(res['p'])}. This tests variance equality, not independence or normality."]
     if a == "prepare":
         return [f"Created derived fields using {len(res['transformations'])} documented rules. Source columns and all rows were preserved."]
+    if a in ("anova_two_way","ancova"):
+        return [f"{a}: N = {res['n']}, Type {res['ss_type']} sums of squares, sum contrasts. See term-specific F tests and p-values; main effects require care when interaction is present. {res['note']}"]
+    if a == "anova_repeated":
+        return [f"Repeated-measures ANOVA across {len(res['levels'])} conditions with {res['n_subjects']} complete subjects: uncorrected F({_n(res['df1'])}, {_n(res['df2'])}) = {_n(res['F'])}, {apa_p(res['p'])}. Report the declared GG/HF correction when sphericity is doubtful; corrected dfs/p are in the table. {res['note']}"]
+    if a == "pca":
+        return [f"PCA retained {res['n_components']} components ({res['scale']} matrix; {res['rotation']} rotation), N = {res['n']}. Retained components explain {_n(sum(res['explained_variance_ratio'])*100,1)}% of variance before rotation. This is not common factor analysis. {res['note']}"]
     return []
 
 
@@ -184,7 +190,7 @@ def spss_syntax(cfg, res):
                 f"/METHOD=ENTER {' '.join(cfg['predictors'])}.")
     if a == "alpha":
         return f"RELIABILITY /VARIABLES={' '.join(cfg['variables'])} /MODEL=ALPHA."
-    return ""
+    return "* Equivalent SPSS syntax not supplied for this action. Reproduce with the recorded JSON request and Python helper."
 
 
 # ------------------------------------------------------------------ assembly
@@ -261,7 +267,7 @@ def build_markdown(title, sections, df, req, image_refs):
                 lines.append(f"- Analysis {s['index']}: {item}")
     lines += ["- Significance (p < .05 is used only as a conventional reference) is not the same as importance; read effect sizes and intervals.",
               "- Results describe associations in this sample; causal claims need a design that supports them.",
-              "- Diagnostics not computed by this helper (for example Levene, residual normality, collinearity) are not claimed to have passed.",
+              "- Diagnostics not computed by this helper (for example residual normality and collinearity) are not claimed to have passed.",
               "", "## Reproducibility", ""]
     sw = first.get("software", {})
     lines.append("- Software: " + ", ".join(f"{k} {v}" for k, v in sw.items()) + ".")
@@ -341,7 +347,7 @@ def markdown_to_html(md, title, images_b64):
     css = ("body{font-family:Segoe UI,Arial,sans-serif;max-width:900px;margin:2em auto;padding:0 1em;color:#222}"
            "table{border-collapse:collapse;margin:.6em 0;font-size:.9em}th,td{border:1px solid #bbb;padding:3px 9px}"
            "th{background:#e8edf3}pre{background:#f5f5f5;padding:.8em;overflow-x:auto}blockquote{border-left:4px solid #c33;margin:.5em 0;padding:.2em .8em;background:#fdf0f0}"
-           "h2{border-bottom:1px solid #ccc;padding-bottom:.2em}")
+           "h2{border-bottom:1px solid #ccc;padding-bottom:.2em}table,tr{page-break-inside:avoid}h2,h3{page-break-after:avoid}")
     return f"<!doctype html><html><head><meta charset='utf-8'><title>{html.escape(title)}</title><style>{css}</style></head><body>\n" + "\n".join(out) + "\n</body></html>\n"
 
 

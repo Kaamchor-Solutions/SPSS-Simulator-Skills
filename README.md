@@ -32,8 +32,13 @@ The bundled Python companion (`scripts/analyze.py`) supports:
 - Data inventory and missing/duplicate counts
 - Descriptive summaries and category frequencies
 - Crosstabs with Pearson chi-square and Cramér’s V
-- Welch independent and paired t-tests
-- Classical one-way ANOVA
+- Independent t-tests: Welch and pooled rows plus mean-centered Levene; paired t-tests
+- Classical/Welch one-way ANOVA; Tukey-Kramer and Games-Howell comparisons
+- Mann-Whitney, Wilcoxon, Kruskal-Wallis and 2x2 Fisher exact
+- Two-way ANOVA and common-slope ANCOVA (Type II/III sum contrasts)
+- One-factor repeated ANOVA with Mauchly, GG and HF corrections
+- Correlation/covariance PCA, optional orthogonal varimax (not factor analysis)
+- Audited recode/range/dummy preparation with source preservation
 - Pearson and Spearman correlations
 - Ordinary least-squares (OLS) linear regression
 - Binary logistic regression
@@ -73,17 +78,18 @@ Run the analysis:
 python scripts/analyze.py --config request.json --output results.json
 ```
 
-`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. Runnable request files for every supported procedure are in [`examples/`](examples/) (`describe-request.json`, `anova-request.json`, and so on); more context is in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md). Inferential procedures report exclusions in `data_audit`; describe and frequencies instead report per-variable missing counts.
+`examples/demo.csv` is fabricated solely to demonstrate the interface; it is not research data. Runnable request files for supported procedures are in [`examples/`](examples/) (`describe-request.json`, `anova-request.json`, and so on); more context is in [`docs/getting-started.md`](docs/getting-started.md) and [`references/portable-runtime.md`](references/portable-runtime.md). Inferential procedures report exclusions in `data_audit`; describe and frequencies instead report per-variable missing counts.
 
 Run the unit tests to verify your environment:
 
 ```bash
-python -m unittest discover -s tests -v
+python -m pip install pytest
+python -m pytest -v
 ```
 
 ## Use as an LLM skill
 
-1. Upload `SKILL.md` to a platform that supports user-provided skills/instructions, or paste its contents into that platform’s equivalent project instructions.
+1. Upload `SKILL.md` to a platform that supports user-provided skills/instructions, with the protocols/, references/ and scripts/ folders, or load the complete repository through the platform's skill installer. A standalone SKILL.md cannot read missing protocol files.
 2. Provide the relevant procedure guide in [`references/procedure-guide.md`](references/procedure-guide.md) when the platform does not load linked files automatically.
 3. Upload a data file only through the platform’s supported, authorized file workflow. If the platform cannot run code, ask the assistant to generate runnable syntax or code instead of claiming analysis was executed.
 4. Confirm variable labels, missing-value codes, group definitions, data design, and any transformations before relying on results.
@@ -124,7 +130,8 @@ Step-by-step instructions for each harness, rules-file fallbacks (`AGENTS.md`), 
 ├── references/                   # Procedure guide and portable-runtime notes
 ├── examples/                     # Fabricated demo data and sample requests
 ├── templates/                    # Reusable analysis-report templates
-├── tests/                        # Unit tests (unittest)
+├── protocols/                    # On-demand procedure contracts
+├── tests/                        # pytest + unittest regression and parity fixtures
 ├── .github/                      # Issue/PR templates and CI workflow
 ├── CHANGELOG.md
 ├── CITATION.cff
@@ -137,7 +144,7 @@ Step-by-step instructions for each harness, rules-file fallbacks (`AGENTS.md`), 
 
 ## Statistical and product boundaries
 
-This project is a transparent starter tool, not a full SPSS clone, a substitute for a statistician, or a guarantee of scientifically appropriate results. The companion does not currently implement survey weights, filters, split-file state, user-defined SPSS missing values/value labels, multiple imputation, robust/clustered standard errors, exact tests, post-hoc families, mixed models, survival analysis, or broad SPSS syntax execution. See [`docs/methods-and-limitations.md`](docs/methods-and-limitations.md).
+This project is a transparent starter tool, not a full SPSS clone, a substitute for a statistician, or a guarantee of scientifically appropriate results. The companion does not currently implement survey weights, filters, split-file state, user-defined SPSS missing values/value labels, multiple imputation, robust/clustered standard errors, exact rank inference with ties/zeros, rank post-hoc families, mixed models, survival analysis, or broad SPSS syntax execution. See [`docs/methods-and-limitations.md`](docs/methods-and-limitations.md).
 
 The project does not establish causality, guarantee assumptions, or automatically infer the correct meaning of coded variables. Review the study design and analysis choices. Output may differ from IBM SPSS because procedures, options, defaults, versions, missing-data rules, and rounding differ.
 
@@ -164,3 +171,7 @@ Variable selections must be non-empty lists of distinct column names. Crosstab v
 Inspect `valid` before interpretation. Undefined inference (constant correlation, zero-variance differences/groups/item totals, insufficient crosstab categories) returns `valid: false`, a reason, and no usable test result. Correlation also marks invalid pairs individually. Logistic fits report convergence and are invalid when nonconvergent or separation warnings occur; numerical exceptions exit nonzero. JSON output does not by itself mean valid inference.
 
 Audit counts are overlapping reason/variable incidences, not a disjoint partition. Do not sum exclusions to derive dropped rows. Use `rows_total - rows_used` for a procedure's unique dropped-row total; correlation instead reports each pair's N and dropped count and sets overall `rows_used` to null. ANOVA dropped-group `count` is the group's original row count; `usable_n` is its numeric, nonmissing outcome count. Describe and frequencies have per-variable missing counts rather than `data_audit`.
+
+## Validation scope
+
+Local library and edge-case tests are included. Published UCLA SPSS Duncan data verify only classical one-way ANOVA SS/df/F within printed rounding; no licensed SPSS was run. All other procedures, including new advanced models, are not SPSS-parity-verified. Read [protocols/validation-and-parity.md](protocols/validation-and-parity.md) and [tests/fixtures/parity.json](tests/fixtures/parity.json).

@@ -173,3 +173,136 @@ def test_phase2_invalid_constant(action):
 def test_fisher_not_2x2(rank_data):
     with pytest.raises(ValueError,match='2x2'):
         run(rank_data,action='fisher_exact',row='g',column='y')
+
+@pytest.fixture
+def factorial_data():
+    rng=np.random.default_rng(180)
+    a=np.repeat(['low','high'],[38,42]);b=rng.choice(['one','two','three'],80);x=rng.normal(size=80)
+    y=.5*(a=='high')+.8*(b=='two')+1.2*x+rng.normal(size=80)
+    return pd.DataFrame(dict(a=a,b=b,x=x,y=y))
+
+@pytest.mark.parametrize('action,ss',[('anova_two_way',2),('anova_two_way',3),('ancova',2),('ancova',3)])
+def test_factorial_terms(factorial_data,action,ss):
+    from statsmodels.formula.api import ols
+    from statsmodels.stats.anova import anova_lm
+    import spss_format
+    cfg=dict(action=action,outcome='y',factors=['a','b'],ss_type=ss)
+    if action=='ancova': cfg['covariates']=['x']
+    r=run(factorial_data,**cfg)
+    formula='y ~ C(a, Sum) * C(b, Sum)' if action=='anova_two_way' else 'y ~ C(a, Sum) + C(b, Sum) + x'
+    ref=anova_lm(ols(formula,factorial_data).fit(),typ=ss)
+    assert np.array([t['sum_sq'] for t in r['terms']])==pytest.approx(ref.sum_sq.to_numpy())
+    assert [t['F'] for t in r['terms'][:-1]]==pytest.approx(ref.F.iloc[:-1].tolist())
+    assert spss_format.format_result(r) and spss_report.interpret(r)
+
+def test_factorial_empty_cell_invalid():
+    df=pd.DataFrame(dict(a=['a']*4+['b']*4,b=['x']*4+['y']*4,y=[1,2,5,4,7,9,4,2]))
+    r=run(df,action='anova_two_way',outcome='y',factors=['a','b'])
+    assert r['valid'] is False
+
+@pytest.mark.parametrize('invalid',[dict(ss_type=1),dict(contrast='treatment'),dict(factors=['a'])])
+def test_factorial_invalid(factorial_data,invalid):
+    with pytest.raises(ValueError):
+        run(factorial_data,**(dict(action='anova_two_way',outcome='y',factors=['a','b'])|invalid))
+
+def repeated_data():
+    rng=np.random.default_rng(86)
+    subject=np.repeat(np.arange(18),4);within=np.tile(['a','b','c','d'],18)
+    y=rng.normal(size=72)*np.tile([1,1.8,2.4,1.2],18)+np.repeat(rng.normal(size=18),4)+np.tile([0,.3,.8,1],18)
+    return pd.DataFrame(dict(subject=subject,within=within,y=y))
+
+def test_repeated_corrections():
+    import pingouin as pg
+    import spss_format
+    df=repeated_data();r=run(df,action='anova_repeated',subject='subject',within='within',outcome='y')
+    ref=pg.rm_anova(df,dv='y',within='within',subject='subject',correction=True,detailed=True)
+    assert r['F']==pytest.approx(ref.iloc[0].F)
+    assert r['corrections']['greenhouse_geisser']['p']==pytest.approx(ref.iloc[0].p_GG_corr)
+    wide=df.pivot(index='subject',columns='within',values='y')
+    assert r['corrections']['huynh_feldt']['epsilon']==pytest.approx(pg.epsilon(wide,correction='hf'))
+    assert spss_format.format_result(r) and spss_report.interpret(r)
+
+def test_repeated_missing_whole_subject():
+    df=repeated_data();df.loc[0,'y']=np.nan
+    r=run(df,action='anova_repeated',subject='subject',within='within',outcome='y')
+    assert r['n_subjects']==17 and r['data_audit']['rows_used']==68
+
+def test_repeated_duplicate_rejected():
+    df=repeated_data();df=pd.concat([df,df.iloc[:1]])
+    with pytest.raises(ValueError,match='Duplicate'):
+        run(df,action='anova_repeated',subject='subject',within='within',outcome='y')
+
+@pytest.mark.parametrize('scale,rotation',[('correlation','none'),('covariance','none'),('correlation','varimax')])
+def test_pca_eigen_and_rotation(scale,rotation):
+    import spss_format
+    rng=np.random.default_rng(87);x=rng.normal(size=(70,4));x[:,1]+=.7*x[:,0];x[:,3]*=3
+    df=pd.DataFrame(x,columns=list('abcd'))
+    r=run(df,action='pca',variables=list('abcd'),n_components=3,scale=scale,rotation=rotation)
+    matrix=np.corrcoef(x,rowvar=False) if scale=='correlation' else np.cov(x,rowvar=False)
+    vals,vec=np.linalg.eigh(matrix)
+    assert r['eigenvalues']==pytest.approx(vals[::-1][:3])
+    L=np.array(r['loadings']);T=np.array(r['rotation_matrix'])
+    assert T.T@T==pytest.approx(np.eye(3),abs=1e-7)
+    assert np.sum(L**2)==pytest.approx(sum(r['eigenvalues']))
+    assert np.array(r['communalities'])==pytest.approx(np.sum(L**2,axis=1))
+    assert spss_format.format_result(r) and spss_report.interpret(r)
+
+@pytest.mark.parametrize('cfg',[dict(rotation='promax'),dict(n_components=0),dict(scale='raw')])
+def test_pca_invalid(cfg):
+    with pytest.raises(ValueError):
+        run(pd.DataFrame(dict(a=[1,3,5,4],b=[5,4,2,8])),**(dict(action='pca',variables=['a','b'])|cfg))
+
+def test_published_spss_duncan_fixture():
+    import json
+    root=Path(__file__).parent/'fixtures'
+    fixture=json.loads((root/'parity.json').read_text());df=pd.read_csv(root/'duncan.csv')
+    r=run(df,action='anova',outcome='prestige',group='type',singleton_policy='retain')
+    expected=fixture['verified_fields']
+    for key in ['n','df_between','df_within','F']:
+        assert r[key]==pytest.approx(expected[key],abs=fixture['absolute_tolerance'])
+    for key in ['between','within','total']:
+        assert r['sum_of_squares'][key]==pytest.approx(expected[key],abs=fixture['absolute_tolerance'])
+    assert r['p']<.0005  # published .000 is not a literal zero
+
+@pytest.mark.parametrize('action',['levene','prepare','wilcoxon','fisher_exact','anova_repeated','pca'])
+def test_additions_report_integration(action,tmp_path):
+    import spss_format
+    df=repeated_data()
+    if action=='prepare':
+        cfg=dict(rules=[dict(kind='recode',source='within',target='code',values=[{'from':'a','to':0}],unmatched='preserve')])
+    elif action=='wilcoxon':
+        df=pd.DataFrame(dict(x=[0,1,2,3,4],y=[1,3,5,4,8]));cfg=dict(outcome='y',paired_with='x')
+    elif action=='fisher_exact':
+        df=pd.DataFrame(dict(a=['a','a','b','b','b'],b=['x','y','x','y','y']));cfg=dict(row='a',column='b')
+    elif action=='pca':
+        df=pd.DataFrame(np.random.default_rng(99).normal(size=(30,3)),columns=list('xyz'));cfg=dict(variables=list('xyz'),n_components=2)
+    elif action=='levene':cfg=dict(outcome='y',group='within')
+    else:cfg=dict(outcome='y',subject='subject',within='within')
+    r=run(df,action=action,**cfg)
+    assert spss_format.format_result(r) and spss_report.interpret(r)
+    file=tmp_path/'data.csv';df.to_csv(file,index=False)
+    output=tmp_path/'report.html'
+    spss_report.write_report(dict(file=str(file),analyses=[dict(action=action,**cfg)]),output,plots=False)
+    html=output.read_text();assert 'did not run' not in html and '<table' in html
+
+def test_repeated_two_level_sphericity():
+    df=pd.DataFrame(dict(subject=[1,1,2,2,3,3,4,4],within=['a','b']*4,y=[1,3,2,5,3,4,4,8]))
+    r=run(df,action='anova_repeated',subject='subject',within='within',outcome='y')
+    assert r['df1']==1
+    assert r['sphericity']['spherical'] is True
+    assert r['corrections']['greenhouse_geisser']['epsilon']==1
+    ref=stats.ttest_rel([3,5,4,8],[1,2,3,4])
+    assert r['F']==pytest.approx(ref.statistic**2)
+    assert r['p']==pytest.approx(ref.pvalue)
+
+@pytest.mark.parametrize('action',['mann_whitney','kruskal_wallis','fisher_exact','welch_anova','tukey','games_howell','levene','anova_two_way','ancova','anova_repeated','pca'])
+def test_new_actions_nonfinite_rejected(action,factorial_data):
+    df=factorial_data.copy();df.loc[0,'y']=np.inf
+    cfg=dict(outcome='y',group='a')
+    if action=='fisher_exact': cfg=dict(row='a',column='y')
+    elif action=='anova_two_way': cfg=dict(outcome='y',factors=['a','b'])
+    elif action=='ancova': cfg=dict(outcome='y',factors=['a'],covariates=['x'])
+    elif action=='anova_repeated':cfg=dict(outcome='y',subject='a',within='b')
+    elif action=='pca':cfg=dict(variables=['y','x'])
+    with pytest.raises(ValueError,match='infinity'):
+        run(df,action=action,**cfg)

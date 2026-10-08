@@ -1,0 +1,11 @@
+{
+  "file": "examples/demo-advanced.csv",
+  "action": "ancova",
+  "outcome": "score",
+  "factors": [
+    "group"
+  ],
+  "covariates": [
+    "age"
+  ]
+}

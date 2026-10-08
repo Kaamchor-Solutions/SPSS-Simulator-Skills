@@ -5,3 +5,7 @@ matplotlib>=3.9
 openpyxl>=3.1
 # Needed only when reading SPSS .sav files:
 pyreadstat>=1.2
+
+# Advanced models: repeated-measures corrections and principal components
+pingouin>=0.6
+scikit-learn>=1.6

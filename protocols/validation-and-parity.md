@@ -25,3 +25,8 @@ SPSS-style tables are not licensed SPSS output. Compare filters, missing rules, 
 
 ## Interpretation and alternatives
 Describe estimates, direction and uncertainty, not just significance. Use design-appropriate robust/rank/exact alternatives when justified; they may target different estimands. Read `validation-and-parity.md` before claiming parity.
+
+## Published-SPSS fixture scope
+`../tests/fixtures/parity.json` records UCLA's published `ONEWAY prestige BY occ_type` SS/df/F and matching public Duncan data. Absolute tolerance .00051 reflects three-decimal printed results, not a relaxed agreement claim. The test checks p<.0005 rather than treating printed .000 as zero. No licensed SPSS was run; no other procedures are parity-verified.
+
+Sources: https://stats.oarc.ucla.edu/spss/examples/ara/applied-regression-analysis-by-john-fox-chapter-8-analysis-ofvariance/ and https://github.com/zief0002/epsy-8264/blob/master/data/duncan.csv

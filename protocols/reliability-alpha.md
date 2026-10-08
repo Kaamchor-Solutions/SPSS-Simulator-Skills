@@ -14,7 +14,7 @@ User evidence must establish design, units, independence, sampling and coding. T
 helper-supported. Run executable code; never estimate statistics with an LLM. Invalid results must not be interpreted as inference.
 
 ## Output contract
-Complete-case N, k, raw alpha and item diagnostics. Existing JSON keys remain stable; new keys are additive. Validity, source and software fields accompany helper requests.
+Complete-case N, k and raw alpha (item-total and alpha-if-deleted diagnostics are not computed). Existing JSON keys remain stable; new keys are additive. Validity, source and software fields accompany helper requests.
 
 ## Validation
 Check analysis N, exclusions, statistic/df/CI bounds and finite results against tests and a second library call where practical. Record settings and uncertainty.

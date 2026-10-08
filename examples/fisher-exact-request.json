@@ -1,0 +1,6 @@
+{
+  "file": "examples/demo.csv",
+  "action": "fisher_exact",
+  "row": "group",
+  "column": "event"
+}

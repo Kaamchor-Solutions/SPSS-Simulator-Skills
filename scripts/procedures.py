@@ -10,7 +10,7 @@ def grouped(df,cfg,min_n=2):
     require_columns(df,[outcome,group])
     y, exclusions = numeric_series_audit(df,outcome)
     labels=cfg.get('groups',list(pd.unique(df[group].dropna())))
-    if len(labels)<2 or len(set(labels)) != len(labels):
+    if not isinstance(labels,list) or len(labels)<2 or len(set(labels)) != len(labels):
         raise ValueError('Requires at least two distinct group labels')
     values=[]
     for label in labels:

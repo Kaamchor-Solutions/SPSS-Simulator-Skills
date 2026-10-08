@@ -14,7 +14,7 @@ User evidence must establish design, units, independence, sampling and coding. T
 helper-supported. Run executable code; never estimate statistics with an LLM. Invalid results must not be interpreted as inference.
 
 ## Output contract
-Computed tables, interpretation, diagnostics, reproducibility and explicit failed analyses. Existing JSON keys remain stable; new keys are additive. Validity, source and software fields accompany helper requests.
+Computed tables, interpretation, diagnostics, reproducibility and explicit failed analyses. Requests and package versions are included. Equivalent SPSS syntax is supplied only for legacy procedures; new procedures use the executable request/code for reproduction, not unverified SPSS syntax.
 
 ## Validation
 Check analysis N, exclusions, statistic/df/CI bounds and finite results against tests and a second library call where practical. Record settings and uncertainty.

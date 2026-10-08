@@ -1,0 +1,68 @@
+{
+  "file": "examples/demo-advanced.csv",
+  "title": "Fabricated advanced-analysis demonstration",
+  "analyses": [
+    {
+      "action": "levene",
+      "outcome": "score",
+      "group": "group"
+    },
+    {
+      "action": "ttest",
+      "outcome": "score",
+      "group": "group"
+    },
+    {
+      "action": "mann_whitney",
+      "outcome": "score",
+      "group": "group"
+    },
+    {
+      "action": "fisher_exact",
+      "row": "group",
+      "column": "event"
+    },
+    {
+      "action": "welch_anova",
+      "outcome": "score",
+      "group": "group"
+    },
+    {
+      "action": "tukey",
+      "outcome": "score",
+      "group": "group"
+    },
+    {
+      "action": "games_howell",
+      "outcome": "score",
+      "group": "group"
+    },
+    {
+      "action": "anova_two_way",
+      "outcome": "score",
+      "factors": [
+        "group",
+        "factor"
+      ]
+    },
+    {
+      "action": "ancova",
+      "outcome": "score",
+      "factors": [
+        "group"
+      ],
+      "covariates": [
+        "age"
+      ]
+    },
+    {
+      "action": "pca",
+      "variables": [
+        "score",
+        "age"
+      ],
+      "n_components": 2,
+      "rotation": "varimax"
+    }
+  ]
+}

@@ -463,6 +463,15 @@ def _extended(res):
         return [Table("Robust Tests of Equality of Means", ["","F","df1","df2","Sig."], [["Welch",fnum(res["F"]),fnum(res["df1"]),fnum(res["df2"]),fsig(res["p"])]])]
     if res["action"] in ("tukey","games_howell"):
         return [Table("Multiple Comparisons: " + res["action"], ["First","Second","Difference (second-first)","Sig. adjusted","CI Lower","CI Upper"], [[p["first"],p["second"],fnum(p["difference_second_minus_first"]),fsig(p["p_adjusted"]),fnum(p["ci95"][0]),fnum(p["ci95"][1])] for p in res["comparisons"]])]
+    if res["action"] in ("anova_two_way","ancova"):
+        return [Table("Tests of Between-Subjects Effects", ["Source","Type " + str(res["ss_type"]) + " SS","df","F","Sig."], [[r["term"],fnum(r["sum_sq"]),fnum(r["df"]),fnum(r["F"]),fsig(r["p"])] for r in res["terms"]], ["Sum-to-zero contrasts; listwise complete cases."])]
+    if res["action"] == "anova_repeated":
+        rows=[["Sphericity assumed",1,fnum(res["F"]),fnum(res["df1"]),fnum(res["df2"]),fsig(res["p"])]]
+        rows += [[name,fnum(c["epsilon"]),fnum(res["F"]),fnum(c["df1"]),fnum(c["df2"]),fsig(c["p"])] for name,c in res["corrections"].items() if c["valid"]]
+        v=res["sphericity"]
+        return [Table("Tests of Within-Subjects Effects",["Correction","Epsilon","F","df1","df2","Sig."],rows),Table("Mauchly's Test of Sphericity",["W","Chi-square","df","Sig."],[[fnum(v["W"]),fnum(v["chi_square"]),v["df"],fsig(v["p"])]],[] if v["valid"] else ["Sphericity diagnostic undefined; not evidence it passed."])]
+    if res["action"] == "pca":
+        return [Table("Total Variance Explained (retained components)",["Component","Eigenvalue","Percent"],[[i+1,fnum(v),fpct(res["explained_variance_ratio"][i]*100)] for i,v in enumerate(res["eigenvalues"])]),Table("Component Matrix: " + res["rotation"],["Variable"]+[str(i+1) for i in range(res["n_components"])]+["Communality"],[[v]+[fnum(x) for x in res["loadings"][i]]+[fnum(res["communalities"][i])] for i,v in enumerate(res["variables"])])]
     raise ValueError(f"No formatter for action {res['action']!r}")
 
 

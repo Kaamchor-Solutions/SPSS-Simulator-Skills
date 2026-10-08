@@ -1,0 +1,7 @@
+{
+  "file": "examples/demo-repeated.csv",
+  "action": "anova_repeated",
+  "subject": "subject",
+  "within": "condition",
+  "outcome": "score"
+}

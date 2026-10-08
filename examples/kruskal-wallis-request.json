@@ -1,0 +1,6 @@
+{
+  "file": "examples/demo.csv",
+  "action": "kruskal_wallis",
+  "outcome": "score",
+  "group": "group"
+}

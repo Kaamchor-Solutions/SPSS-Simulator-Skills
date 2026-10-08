@@ -37,6 +37,11 @@ Read only the relevant relative protocol file before selecting, computing or int
 | posthoc-tukey | [protocols/posthoc-tukey.md](protocols/posthoc-tukey.md) |
 | posthoc-games-howell | [protocols/posthoc-games-howell.md](protocols/posthoc-games-howell.md) |
 
+| anova-two-way | [protocols/anova-two-way.md](protocols/anova-two-way.md) |
+| ancova | [protocols/ancova.md](protocols/ancova.md) |
+| anova-repeated | [protocols/anova-repeated.md](protocols/anova-repeated.md) |
+| pca | [protocols/pca.md](protocols/pca.md) |
+
 ## First response and intake
 
 When the user invokes the skill without a dataset or a defined task, warmly start the project and ask them to:
