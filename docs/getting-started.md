@@ -2,9 +2,11 @@
 
 ## 1. Set up the optional Python helper
 
-Use Python 3.10+. From the project root:
+Use Python 3.10+. Clone the repository and work from the project root (harness-specific skill installation is in [`installation.md`](installation.md)):
 
 ```bash
+git clone https://github.com/Kaamchor-Solutions/SPSS-Simulator-Skills.git
+cd SPSS-Simulator-Skills
 python -m venv .venv
 # macOS/Linux
 source .venv/bin/activate
@@ -133,7 +135,7 @@ python scripts/spss_report.py --config examples/report-request.json --output rep
 
 ## 6. Use the LLM instructions
 
-`SKILL.md` is the core LLM instruction file. Upload or paste it into a platform’s custom-instructions/skill facility. Include `references/procedure-guide.md` if the platform cannot read companion reference files. The platform must separately support file upload and computation for end-to-end analysis; otherwise, the assistant should provide syntax/code or interpret output you provide.
+`SKILL.md` is the core LLM instruction file. Install it as a skill in a coding harness (see [`installation.md`](installation.md) for Claude Code, OpenCode, Kilo Code, Codex CLI, Gemini CLI and others) or upload/paste it into a platform’s custom-instructions/skill facility. Include `references/procedure-guide.md` if the platform cannot read companion reference files. The platform must separately support file upload and computation for end-to-end analysis; otherwise, the assistant should provide syntax/code or interpret output you provide.
 
 ## Validation and result status
 

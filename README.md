@@ -17,6 +17,7 @@ The project combines an LLM skill (`SKILL.md`) with an optional Python helper fo
 - [What it supports](#what-it-supports)
 - [Quick start: run the Python helper](#quick-start-run-the-python-helper)
 - [Use as an LLM skill](#use-as-an-llm-skill)
+- [Install in a coding harness](#install-in-a-coding-harness)
 - [Repository layout](#repository-layout)
 - [Statistical and product boundaries](#statistical-and-product-boundaries)
 - [Privacy and security](#privacy-and-security)
@@ -47,6 +48,8 @@ Input formats: CSV, TSV, Excel (`.xlsx`/`.xls`, depending on the installed engin
 Requires Python 3.10 or newer (tested with Python 3.11 and 3.13) and pip.
 
 ```bash
+git clone https://github.com/Kaamchor-Solutions/SPSS-Simulator-Skills.git
+cd SPSS-Simulator-Skills
 python -m venv .venv
 # macOS/Linux
 source .venv/bin/activate
@@ -85,7 +88,29 @@ python -m unittest discover -s tests -v
 3. Upload a data file only through the platform’s supported, authorized file workflow. If the platform cannot run code, ask the assistant to generate runnable syntax or code instead of claiming analysis was executed.
 4. Confirm variable labels, missing-value codes, group definitions, data design, and any transformations before relying on results.
 
-The precise import steps differ by platform. This repository does not promise compatibility with every vendor’s “skill” format.
+The precise import steps differ by platform. This repository does not promise compatibility with every vendor’s “skill” format. For coding harnesses that load skill folders, see the next section.
+
+## Install in a coding harness
+
+Coding harnesses that follow the Agent Skills layout (a folder named `spss-simulator` containing `SKILL.md`, `scripts/` and `references/`) can load this repository directly. Clone it straight into the harness’s skills folder and keep the whole folder together:
+
+| Harness | Personal folder | Project folder |
+| --- | --- | --- |
+| Claude Code | `~/.claude/skills/spss-simulator/` | `.claude/skills/spss-simulator/` |
+| OpenCode | `~/.config/opencode/skills/spss-simulator/` (also reads `~/.claude/skills/` and `~/.agents/skills/`) | `.opencode/skills/spss-simulator/` |
+| Kilo Code | `~/.kilo/skills/spss-simulator/` (also reads `~/.agents/skills/`) | `.kilo/skills/spss-simulator/` |
+| Codex CLI | `~/.agents/skills/spss-simulator/` | `.agents/skills/spss-simulator/` |
+| Gemini CLI | `~/.gemini/skills/spss-simulator/` or `~/.agents/skills/spss-simulator/` | `.gemini/skills/spss-simulator/` |
+
+Example (Claude Code, personal scope):
+
+```bash
+git clone https://github.com/Kaamchor-Solutions/SPSS-Simulator-Skills.git ~/.claude/skills/spss-simulator
+```
+
+Then start the harness and type `/spss-simulator` (Claude Code) or ask for “the spss-simulator skill” by name. Install the Python helper requirements too, since the skill alone cannot compute results.
+
+Step-by-step instructions for each harness, rules-file fallbacks (`AGENTS.md`), a generic recipe for any other harness or LLM, and troubleshooting are in [`docs/installation.md`](docs/installation.md).
 
 ## Repository layout
 
@@ -95,7 +120,7 @@ The precise import steps differ by platform. This repository does not promise co
 ├── scripts/                      # analyze.py, spss_format.py, spss_plots.py, spss_report.py
 │   ├── analyze.py                # Deterministic Python companion (JSON in → JSON out)
 │   └── requirements.txt
-├── docs/                         # Getting started; methods and limitations
+├── docs/                         # Installation; getting started; methods and limitations
 ├── references/                   # Procedure guide and portable-runtime notes
 ├── examples/                     # Fabricated demo data and sample requests
 ├── templates/                    # Reusable analysis-report templates
